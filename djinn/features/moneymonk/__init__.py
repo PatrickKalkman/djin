@@ -1,0 +1,3 @@
+"""
+MoneyMonk automation
+"""
