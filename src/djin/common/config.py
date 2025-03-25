@@ -158,12 +158,9 @@ def is_configured():
     )
 
     # Check MoneyMonk configuration
-    moneymonk_configured = (
-        config["moneymonk"]["username"] 
-        and (
-            config["moneymonk"]["totp_secret"]
-            or keyring.get_password(SERVICE_NAME, f"moneymonk_totp_{config['moneymonk']['username']}")
-        )
+    moneymonk_configured = config["moneymonk"]["username"] and (
+        config["moneymonk"]["totp_secret"]
+        or keyring.get_password(SERVICE_NAME, f"moneymonk_totp_{config['moneymonk']['username']}")
     )
 
     return jira_configured and moneymonk_configured

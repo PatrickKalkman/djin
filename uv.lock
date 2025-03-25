@@ -201,7 +201,7 @@ wheels = [
 [[package]]
 name = "djin"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "jira" },
     { name = "prompt-toolkit" },
