@@ -3,6 +3,7 @@ Custom exceptions and error handling for Djin.
 """
 
 import logging
+import pathlib
 import sys
 import time
 import traceback
@@ -12,7 +13,10 @@ from rich.panel import Panel
 
 # Set up logging
 logger = logging.getLogger("djin")
-handler = logging.FileHandler("~/.djin/djin.log")
+log_dir = pathlib.Path("~/.Djin").expanduser()
+log_dir.mkdir(exist_ok=True, parents=True)
+log_file = log_dir / "djin.log"
+handler = logging.FileHandler(log_file)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
