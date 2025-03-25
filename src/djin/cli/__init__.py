@@ -1,3 +1,3 @@
 """
-Command-line interface for Djinn
+Command-line interface for Djin
 """

@@ -1,3 +1,3 @@
 """
-Djinn: Your Terminal-Based Developer Assistant
+Djin: Your Terminal-Based Developer Assistant
 """

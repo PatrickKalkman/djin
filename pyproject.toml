@@ -1,7 +1,7 @@
 [project]
 name = "djin"
 version = "0.1.0"
-description = "Djinn is your magical terminal companion that banishes tedious dev tasks by managing Jira tickets, tracking time, taking context-aware notes, and automating MoneyMonk entries so you can stay in your coding flow"
+description = "Djin is your magical terminal companion that banishes tedious dev tasks by managing Jira tickets, tracking time, taking context-aware notes, and automating MoneyMonk entries so you can stay in your coding flow"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

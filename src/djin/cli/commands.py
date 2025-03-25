@@ -1,5 +1,5 @@
 """
-Command routing system for Djinn.
+Command routing system for Djin.
 """
 
 from rich.console import Console

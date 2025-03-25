@@ -1,5 +1,5 @@
 """
-Main CLI application loop for Djinn.
+Main CLI application loop for Djin.
 """
 
 import pathlib
@@ -27,10 +27,10 @@ def display_welcome():
     """Display welcome message."""
     welcome_text = Text()
     welcome_text.append("Welcome to ", style="white")
-    welcome_text.append("Djinn", style="bright_cyan")
+    welcome_text.append("Djin", style="bright_cyan")
     welcome_text.append(" - Your magical terminal assistant!", style="white")
 
-    panel = Panel(welcome_text, title="✨ Djinn", border_style="cyan")
+    panel = Panel(welcome_text, title="✨ Djin", border_style="cyan")
     console.print(panel)
     console.print("Type /help for available commands.")
 
@@ -68,7 +68,7 @@ def show_help():
     Available commands:
 
     /help           - Show this help message
-    /exit or /quit  - Exit Djinn
+    /exit or /quit  - Exit Djin
 
     Coming soon:
     /task           - Task management commands
@@ -78,7 +78,7 @@ def show_help():
 
     Type any text without a leading slash to add a note for the current task.
     """
-    console.print(Panel(help_text, title="Djinn Help", border_style="green"))
+    console.print(Panel(help_text, title="Djin Help", border_style="green"))
 
 
 def show_status():
@@ -90,7 +90,7 @@ def show_status():
 def main_loop():
     """Main application loop."""
     # Create history file directory if it doesn't exist
-    history_dir = pathlib.Path("~/.djinn").expanduser()
+    history_dir = pathlib.Path("~/.Djin").expanduser()
     history_dir.mkdir(exist_ok=True)
 
     # Create prompt session with history
@@ -106,7 +106,7 @@ def main_loop():
             show_status()
 
             # Get user input
-            text = session.prompt("djinn> ", style=style)
+            text = session.prompt("Djin> ", style=style)
 
             # Skip empty input
             if not text.strip():

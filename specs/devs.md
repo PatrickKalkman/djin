@@ -1,16 +1,16 @@
-# Djinn: Developer Specification
+# Djin: Developer Specification
 
-Hey there, developer! Ready to build something awesome? This doc gives you everything you need to create Djinn - a magical terminal assistant that'll make tedious dev tasks disappear. Let's dive right in!
+Hey there, developer! Ready to build something awesome? This doc gives you everything you need to create Djin - a magical terminal assistant that'll make tedious dev tasks disappear. Let's dive right in!
 
 ## The Vision 
 
-Djinn is your terminal buddy that handles all the stuff you hate doing:
+Djin is your terminal buddy that handles all the stuff you hate doing:
 - Managing Jira tickets without tab-switching
 - Tracking time without thinking about it
 - Taking notes that actually stay connected to your work
 - Automating those annoying MoneyMonk entries
 
-In a nutshell: **Djinn is your magical terminal companion that banishes tedious dev tasks by managing Jira tickets, tracking time, taking context-aware notes, and automating MoneyMonk entries so you can stay in your coding flow.**
+In a nutshell: **Djin is your magical terminal companion that banishes tedious dev tasks by managing Jira tickets, tracking time, taking context-aware notes, and automating MoneyMonk entries so you can stay in your coding flow.**
 
 ## Core Requirements
 
@@ -33,7 +33,7 @@ In a nutshell: **Djinn is your magical terminal companion that banishes tedious 
 We're using a vertical slice architecture to keep things maintainable. Each feature is self-contained with everything it needs:
 
 ```
-djinn/
+Djin/
 ├── common/           # Cross-cutting concerns
 │   ├── __init__.py
 │   ├── config.py     # Configuration management
@@ -103,7 +103,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 
 def main_loop():
-    session = PromptSession(history=FileHistory('~/.djinn_history'))
+    session = PromptSession(history=FileHistory('~/.Djin_history'))
     
     while True:
         try:
@@ -299,7 +299,7 @@ def test_fetch_tasks(mock_jira_client):
 
 The app should be installable with pip:
 ```
-pip install djinn-assistant
+pip install Djin-assistant
 ```
 
 Include a simple setup script that:
@@ -335,7 +335,7 @@ Include a simple setup script that:
 2. Create a virtual environment
 3. Install dependencies with `pip install -e .`
 4. Copy `.env.example` to `.env` and fill in your details
-5. Run with `python -m djinn`
+5. Run with `python -m Djin`
 
 ## Resources
 
@@ -345,6 +345,6 @@ Include a simple setup script that:
 
 ---
 
-That's it! You've got everything you need to start building Djinn. This magical assistant is going to save so much time and mental energy - I can't wait to see it come to life! 
+That's it! You've got everything you need to start building Djin. This magical assistant is going to save so much time and mental energy - I can't wait to see it come to life! 
 
 Happy coding! ✨

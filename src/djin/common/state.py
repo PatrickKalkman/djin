@@ -1,5 +1,5 @@
 """
-Application state management for Djinn.
+Application state management for Djin.
 """
 
 import json
@@ -8,7 +8,7 @@ import threading
 from datetime import datetime
 
 # State file path
-STATE_DIR = pathlib.Path("~/.djinn").expanduser()
+STATE_DIR = pathlib.Path("~/.Djin").expanduser()
 STATE_FILE = STATE_DIR / "state.json"
 
 # Default state

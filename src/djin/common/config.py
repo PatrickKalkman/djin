@@ -1,5 +1,5 @@
 """
-Configuration management for Djinn.
+Configuration management for Djin.
 """
 
 import json
@@ -14,10 +14,10 @@ from rich.console import Console
 console = Console()
 
 # Service name for keyring
-SERVICE_NAME = "djinn-assistant"
+SERVICE_NAME = "Djin-assistant"
 
 # Default configuration directory
-CONFIG_DIR = pathlib.Path("~/.djinn").expanduser()
+CONFIG_DIR = pathlib.Path("~/.Djin").expanduser()
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
 # Default configuration template
@@ -57,12 +57,12 @@ def load_config():
         save_config(config)
 
     # Override with environment variables if they exist
-    if os.getenv("DJINN_JIRA_URL"):
-        config["jira"]["url"] = os.getenv("DJINN_JIRA_URL")
-    if os.getenv("DJINN_JIRA_USERNAME"):
-        config["jira"]["username"] = os.getenv("DJINN_JIRA_USERNAME")
-    if os.getenv("DJINN_MONEYMONK_USERNAME"):
-        config["moneymonk"]["username"] = os.getenv("DJINN_MONEYMONK_USERNAME")
+    if os.getenv("Djin_JIRA_URL"):
+        config["jira"]["url"] = os.getenv("Djin_JIRA_URL")
+    if os.getenv("Djin_JIRA_USERNAME"):
+        config["jira"]["username"] = os.getenv("Djin_JIRA_USERNAME")
+    if os.getenv("Djin_MONEYMONK_USERNAME"):
+        config["moneymonk"]["username"] = os.getenv("Djin_MONEYMONK_USERNAME")
 
     # Load secrets from keyring
     if config["jira"]["username"]:
@@ -114,7 +114,7 @@ def setup_config():
     """Interactive setup for configuration."""
     config = load_config()
 
-    console.print("\n[bold cyan]Djinn Configuration Setup[/bold cyan]")
+    console.print("\n[bold cyan]Djin Configuration Setup[/bold cyan]")
     console.print("Press Enter to keep current values in [brackets].\n")
 
     # Jira configuration

@@ -1,3 +1,3 @@
 """
-Feature modules for Djinn
+Feature modules for Djin
 """

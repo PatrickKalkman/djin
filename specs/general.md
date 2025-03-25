@@ -1,8 +1,8 @@
-# Djinn: Your Terminal-Based Developer Assistant
+# Djin: Your Terminal-Based Developer Assistant
 
 ## The Big Idea
 
-Djinn lives in your terminal and handles all those annoying non-coding tasks that eat up your day. It's designed to make your work feel lighter by taking care of the admin stuff you don't enjoy.
+Djin lives in your terminal and handles all those annoying non-coding tasks that eat up your day. It's designed to make your work feel lighter by taking care of the admin stuff you don't enjoy.
 
 The key features:
 - Jira task management without leaving your terminal
@@ -15,7 +15,7 @@ The key features:
 We're going with a vertical slice architecture because it makes way more sense for how you'll actually use this tool. Each feature is self-contained and has everything it needs.
 
 ```
-djinn/
+Djin/
 ├── common/           # Stuff you need everywhere
 │   ├── config.py     # Your settings and secrets
 │   └── state.py      # Tracks what you're working on
@@ -33,12 +33,12 @@ This way, when you want to tweak something, everything you need is in one place.
 
 ## The User Experience
 
-When you fire up Djinn, you'll see your current tasks from Jira right away - similar to the Rich tables you already had in your prototype, with clickable ticket links and status highlights.
+When you fire up Djin, you'll see your current tasks from Jira right away - similar to the Rich tables you already had in your prototype, with clickable ticket links and status highlights.
 
 Then you just interact with commands using the `/command` syntax:
 
 ```
-Djinn v0.1.0
+Djin v0.1.0
 Connected to Jira Cloud ✓
 Today's tasks: 5 active, 2 completed
 

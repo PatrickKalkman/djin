@@ -1,16 +1,17 @@
 """
-Djinn - A magical terminal assistant for developers.
+Djin - A magical terminal assistant for developers.
 """
 
 import argparse
 import sys
 
-# Import Djinn modules
-from djinn.cli.app import main_loop
-from djinn.common.config import is_configured, setup_config
-from djinn.common.errors import handle_error
-from djinn.db.schema import backup_database, init_database, reset_database
 from rich.console import Console
+
+# Import Djin modules
+from djin.cli.app import main_loop
+from djin.common.config import is_configured, setup_config
+from djin.common.errors import handle_error
+from djin.db.schema import backup_database, init_database, reset_database
 
 # Create console for rich output
 console = Console()
@@ -19,7 +20,7 @@ console = Console()
 def parse_arguments():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Djinn - A magical terminal assistant for developers",
+        description="Djin - A magical terminal assistant for developers",
         epilog="Type '/help' within the application for more information.",
     )
 
@@ -40,7 +41,7 @@ def parse_arguments():
 
 
 def main():
-    """Main entry point for Djinn."""
+    """Main entry point for Djin."""
     try:
         # Parse command line arguments
         args = parse_arguments()
@@ -49,7 +50,7 @@ def main():
         if args.setup:
             setup_config()
             init_database()
-            console.print("[green]Setup complete! You can now run Djinn.[/green]")
+            console.print("[green]Setup complete! You can now run Djin.[/green]")
             return 0
 
         # Handle reset database command
@@ -80,7 +81,7 @@ def main():
 
         # Check if configured
         if not is_configured():
-            console.print("[yellow]Djinn is not configured yet. Running setup...[/yellow]")
+            console.print("[yellow]Djin is not configured yet. Running setup...[/yellow]")
             setup_config()
 
         # Start the main application loop

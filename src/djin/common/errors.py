@@ -1,5 +1,5 @@
 """
-Custom exceptions and error handling for Djinn.
+Custom exceptions and error handling for Djin.
 """
 
 import logging
@@ -11,8 +11,8 @@ from rich.console import Console
 from rich.panel import Panel
 
 # Set up logging
-logger = logging.getLogger("djinn")
-handler = logging.FileHandler("~/.djinn/djinn.log")
+logger = logging.getLogger("djin")
+handler = logging.FileHandler("~/.djin/djin.log")
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -22,37 +22,37 @@ logger.setLevel(logging.INFO)
 console = Console()
 
 
-class DjinnError(Exception):
-    """Base class for all Djinn exceptions."""
+class DjinError(Exception):
+    """Base class for all Djin exceptions."""
 
     pass
 
 
-class ConfigurationError(DjinnError):
+class ConfigurationError(DjinError):
     """Error related to configuration."""
 
     pass
 
 
-class DatabaseError(DjinnError):
+class DatabaseError(DjinError):
     """Error related to database operations."""
 
     pass
 
 
-class JiraError(DjinnError):
+class JiraError(DjinError):
     """Error related to Jira operations."""
 
     pass
 
 
-class TimeTrackingError(DjinnError):
+class TimeTrackingError(DjinError):
     """Error related to time tracking."""
 
     pass
 
 
-class MoneyMonkError(DjinnError):
+class MoneyMonkError(DjinError):
     """Error related to MoneyMonk operations."""
 
     pass
@@ -67,7 +67,7 @@ def log_error(error, level=logging.ERROR):
 
 def display_error(error, title="Error"):
     """Display an error to the user."""
-    if isinstance(error, DjinnError):
+    if isinstance(error, DjinError):
         # Use the class name as the error type
         error_type = error.__class__.__name__
         error_message = str(error)

@@ -1,5 +1,5 @@
 """
-SQLite database schema for Djinn.
+SQLite database schema for Djin.
 """
 
 import pathlib
@@ -11,8 +11,8 @@ from rich.console import Console
 console = Console()
 
 # Database file path
-DB_DIR = pathlib.Path("~/.djinn").expanduser()
-DB_FILE = DB_DIR / "djinn.db"
+DB_DIR = pathlib.Path("~/.Djin").expanduser()
+DB_FILE = DB_DIR / "Djin.db"
 
 # Table schemas
 SCHEMA = [
@@ -109,7 +109,7 @@ def backup_database():
     import shutil
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_file = DB_DIR / f"djinn_{timestamp}.db.bak"
+    backup_file = DB_DIR / f"Djin_{timestamp}.db.bak"
 
     if DB_FILE.exists():
         shutil.copy2(DB_FILE, backup_file)
