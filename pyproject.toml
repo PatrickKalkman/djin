@@ -4,4 +4,37 @@ version = "0.1.0"
 description = "Djinn is your magical terminal companion that banishes tedious dev tasks by managing Jira tickets, tracking time, taking context-aware notes, and automating MoneyMonk entries so you can stay in your coding flow"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "jira>=3.8.0",
+    "prompt-toolkit>=3.0.50",
+    "python-dotenv>=1.1.0",
+    "rich>=13.9.4",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+djin = "djin.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/djin"]
+
+[tool.ruff]
+# Enable the pycodestyle (`E`) and Pyflakes (`F`) rules by default
+lint.select = ["E", "F", "I"]
+# Allow unused variables when underscore-prefixed
+lint.dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+# Python version compatibility
+target-version = "py312"
+# Line length matches black's default
+line-length = 120
+
+[dependency-groups]
+dev = [
+    "hatch>=1.14.0",
+    "pytest>=8.3.5",
+    "ruff>=0.11.2",
+]
+
