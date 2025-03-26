@@ -12,7 +12,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
-from djin.main import VERSION
+from djin.__version__ import __version__ as VERSION
 
 # Create console for rich output
 console = Console()

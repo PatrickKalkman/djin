@@ -7,8 +7,8 @@ import sys
 
 from rich.console import Console
 
-# Define version
-VERSION = "0.1.0"
+# Import version
+from djin.__version__ import __version__ as VERSION
 
 # Import Djin modules
 from djin.cli.app import main_loop
