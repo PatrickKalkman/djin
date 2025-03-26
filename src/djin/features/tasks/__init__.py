@@ -19,4 +19,4 @@ from djin.features.tasks.jira_client import (
 )
 
 # Import commands to register them
-from djin.features.tasks import commands
+from djin.features.tasks.commands import *  # Explicitly import all commands to ensure registration
