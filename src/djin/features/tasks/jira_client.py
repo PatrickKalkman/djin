@@ -6,7 +6,7 @@ This module provides functions for connecting to Jira and managing stories and t
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from jira import JIRA
 from rich.console import Console
@@ -14,7 +14,7 @@ from rich.table import Table
 from rich.text import Text
 
 from djin.common.config import load_config
-from djin.common.errors import JiraError, retry_operation
+from djin.common.errors import JiraError
 
 # Set up rich console
 console = Console()
@@ -51,10 +51,7 @@ def get_jira_client() -> JIRA:
 
     try:
         # Initialize Jira client
-        jira_client = JIRA(
-            server=jira_config["url"],
-            basic_auth=(jira_config["username"], jira_config["api_token"])
-        )
+        jira_client = JIRA(server=jira_config["url"], basic_auth=(jira_config["username"], jira_config["api_token"]))
         return jira_client
     except Exception as e:
         raise JiraError(f"Failed to connect to Jira: {str(e)}")
@@ -102,7 +99,10 @@ def get_my_completed_issues(days: int = 7) -> List[Any]:
     try:
         # Get issues that were completed (Done or Resolved) in the specified days
         one_week_ago = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
-        jql = f"assignee = currentUser() AND (status = Done OR status = Resolved) AND updated >= {one_week_ago} ORDER BY updated DESC"
+        jql = (
+            "assignee = currentUser() AND (status = Done OR status = Resolved) "
+            f"AND updated >= {one_week_ago} ORDER BY updated DESC"
+        )
         issues = jira.search_issues(jql)
 
         # Fetch worklog information for each issue
@@ -181,7 +181,7 @@ def get_issue_details(issue_key: str) -> Dict[str, Any]:
 
     try:
         issue = jira.issue(issue_key)
-        
+
         # Build a dictionary with issue details
         details = {
             "key": issue.key,
@@ -189,19 +189,23 @@ def get_issue_details(issue_key: str) -> Dict[str, Any]:
             "status": issue.fields.status.name,
             "type": issue.fields.issuetype.name,
             "priority": getattr(issue.fields.priority, "name", "Unknown"),
-            "assignee": getattr(issue.fields.assignee, "displayName", "Unassigned") if hasattr(issue.fields, "assignee") else "Unassigned",
-            "reporter": getattr(issue.fields.reporter, "displayName", "Unknown") if hasattr(issue.fields, "reporter") else "Unknown",
+            "assignee": getattr(issue.fields.assignee, "displayName", "Unassigned")
+            if hasattr(issue.fields, "assignee")
+            else "Unassigned",
+            "reporter": getattr(issue.fields.reporter, "displayName", "Unknown")
+            if hasattr(issue.fields, "reporter")
+            else "Unknown",
             "created": issue.fields.created,
             "updated": issue.fields.updated,
             "description": issue.fields.description or "",
             "worklog_seconds": get_issue_worklog_time(issue_key),
             "worklog_formatted": format_time_spent(get_issue_worklog_time(issue_key)),
         }
-        
+
         # Add due date if available
         if hasattr(issue.fields, "duedate") and issue.fields.duedate:
             details["due_date"] = issue.fields.duedate
-            
+
         return details
     except Exception as e:
         raise JiraError(f"Failed to get issue details for {issue_key}: {str(e)}")
@@ -220,7 +224,7 @@ def create_jira_link(issue_key: str) -> Text:
     # Get Jira URL from config
     config = load_config()
     jira_url = config.get("jira", {}).get("url", "")
-    
+
     # Create browse URL
     if jira_url:
         if not jira_url.endswith("/"):
@@ -229,7 +233,7 @@ def create_jira_link(issue_key: str) -> Text:
     else:
         # Fallback to a generic format if URL not configured
         browse_url = f"https://jira.atlassian.net/browse/{issue_key}"
-    
+
     # Create a Rich Text object with a hyperlink
     text = Text(issue_key)
     text.stylize(f"link {browse_url}")
@@ -250,28 +254,28 @@ def display_issues(issues: List[Any], title: str = "My Issues") -> None:
 
     # Create table
     table = Table(title=f"{title} ({len(issues)} total)")
-    
+
     # Add columns
     table.add_column("Key", style="cyan", no_wrap=True)
     table.add_column("Summary")
     table.add_column("Status", style="green", no_wrap=True)
     table.add_column("Priority", no_wrap=True)
     table.add_column("Time Spent", style="yellow", no_wrap=True)
-    
+
     # Add rows
     for issue in issues:
         # Format time spent
         time_spent = format_time_spent(getattr(issue, "worklog_seconds", 0))
-        
+
         # Add row with clickable issue key
         table.add_row(
             create_jira_link(issue.key),
             issue.fields.summary,
             issue.fields.status.name,
             getattr(issue.fields.priority, "name", "Unknown"),
-            time_spent
+            time_spent,
         )
-    
+
     # Print table
     console.print(table)
 
@@ -318,20 +322,25 @@ def transition_issue(issue_key: str, transition_name: str) -> bool:
 
     try:
         issue = jira.issue(issue_key)
-        
+
         # Find the transition ID
         transitions = jira.transitions(issue)
         transition_id = None
-        
+
         for t in transitions:
             if t["name"].lower() == transition_name.lower():
                 transition_id = t["id"]
                 break
-                
+
         if not transition_id:
             available_transitions = ", ".join([t["name"] for t in transitions])
-            raise JiraError(f"Transition '{transition_name}' not available for {issue_key}. Available transitions: {available_transitions}")
-            
+            raise JiraError(
+                (
+                    f"Transition '{transition_name}' not available for {issue_key}. "
+                    f"Available transitions: {available_transitions}"
+                )
+            )
+
         # Perform the transition
         jira.transition_issue(issue, transition_id)
         return True
@@ -364,7 +373,7 @@ def create_issue(project_key: str, summary: str, description: str, issue_type: s
             "description": description,
             "issuetype": {"name": issue_type},
         }
-        
+
         new_issue = jira.create_issue(fields=issue_dict)
         return new_issue.key
     except Exception as e:
@@ -391,7 +400,7 @@ def create_subtask(parent_key: str, summary: str, description: str) -> str:
     try:
         # Get parent issue to determine project
         parent_issue = jira.issue(parent_key)
-        
+
         subtask_dict = {
             "project": {"key": parent_issue.fields.project.key},
             "summary": summary,
@@ -399,7 +408,7 @@ def create_subtask(parent_key: str, summary: str, description: str) -> str:
             "issuetype": {"name": "Sub-task"},
             "parent": {"key": parent_key},
         }
-        
+
         new_subtask = jira.create_issue(fields=subtask_dict)
         return new_subtask.key
     except Exception as e:
@@ -496,12 +505,7 @@ def log_work(issue_key: str, time_spent: str, comment: str = "", start_time: Opt
     jira = get_jira_client()
 
     try:
-        jira.add_worklog(
-            issue_key, 
-            timeSpent=time_spent, 
-            comment=comment,
-            started=start_time
-        )
+        jira.add_worklog(issue_key, timeSpent=time_spent, comment=comment, started=start_time)
         return True
     except Exception as e:
         raise JiraError(f"Failed to log work on {issue_key}: {str(e)}")
