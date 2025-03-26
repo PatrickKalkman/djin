@@ -17,3 +17,6 @@ from djin.features.tasks.jira_client import (
     search_issues,
     transition_issue,
 )
+
+# Import commands to register them
+import djin.features.tasks.commands
