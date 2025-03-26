@@ -87,6 +87,12 @@ def main_loop():
     # Create prompt session with history
     session = PromptSession(history=FileHistory(str(history_dir / "history")), style=style)
 
+    # Import all feature modules to ensure commands are registered
+    import djin.features.tasks.commands
+    import djin.features.notes
+    import djin.features.time
+    import djin.features.moneymonk
+
     # Display welcome message
     display_welcome()
 
