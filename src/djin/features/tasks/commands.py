@@ -16,17 +16,17 @@ def completed_command(args):
     try:
         # Default to 7 days if no argument provided
         days = 7
-        
+
         # Parse days argument if provided
         if args and args[0].isdigit():
             days = int(args[0])
-        
+
         # Get completed issues
         issues = get_my_completed_issues(days=days)
-        
+
         # Display issues
         display_issues(issues, title=f"My Completed Issues (Last {days} Days)")
-        
+
         return True
     except Exception as e:
         console.print(f"[red]Error showing completed issues: {str(e)}[/red]")
@@ -35,7 +35,7 @@ def completed_command(args):
 
 # Register task commands
 register_command(
-    "completed", 
-    completed_command, 
-    "Show your completed Jira issues. Optional: specify number of days to look back (default: 7)"
+    "completed",
+    completed_command,
+    "Show your completed Jira issues. Optional: specify number of days to look back (default: 7)",
 )
