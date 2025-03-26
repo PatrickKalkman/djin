@@ -34,12 +34,12 @@ def completed_command(args):
 
 
 def tasks_command(args):
-    """Show active Jira issues."""
+    """Show active Jira issues that are not in To Do, Done, or Resolved status."""
     try:
         from djin.features.tasks.jira_client import get_my_issues
         
-        # Get only issues that are active (not done or resolved)
-        status_filter = "status != 'Done' AND status != 'Resolved'"
+        # Get only issues that are active (not to do, done, or resolved)
+        status_filter = "status != 'To Do' AND status != 'Done' AND status != 'Resolved'"
         issues = get_my_issues(status_filter=status_filter)
         
         # Display issues
@@ -61,5 +61,5 @@ register_command(
 register_command(
     "tasks",
     tasks_command,
-    "Show your active Jira issues (not Done or Resolved)",
+    "Show your active Jira issues (not To Do, Done, or Resolved)",
 )
