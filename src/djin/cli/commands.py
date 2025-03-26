@@ -71,5 +71,4 @@ def exit_command(args):
 
 # Register basic commands
 register_command("help", help_command, "Show help for commands")
-register_command("exit", exit_command, "Exit the application")
 register_command("quit", exit_command, "Exit the application")
