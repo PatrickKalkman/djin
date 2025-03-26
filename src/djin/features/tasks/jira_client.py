@@ -57,9 +57,12 @@ def get_jira_client() -> JIRA:
         raise JiraError(f"Failed to connect to Jira: {str(e)}")
 
 
-def get_my_issues() -> List[Any]:
+def get_my_issues(status_filter: str = None) -> List[Any]:
     """
-    Get issues assigned to the current user that are not done.
+    Get issues assigned to the current user with optional status filtering.
+
+    Args:
+        status_filter: Optional status filter string for JQL (e.g., "status = 'In Progress'")
 
     Returns:
         List[Any]: List of JIRA issue objects
@@ -67,7 +70,12 @@ def get_my_issues() -> List[Any]:
     jira = get_jira_client()
 
     try:
-        jql = "assignee = currentUser() AND status != Done AND status != Resolved ORDER BY priority DESC, updated DESC"
+        # Base JQL for assigned issues
+        if status_filter:
+            jql = f"assignee = currentUser() AND {status_filter} ORDER BY priority DESC, updated DESC"
+        else:
+            jql = "assignee = currentUser() AND status != Done AND status != Resolved ORDER BY priority DESC, updated DESC"
+        
         issues = jira.search_issues(jql)
 
         # Fetch worklog information for each issue
