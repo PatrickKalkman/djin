@@ -110,5 +110,11 @@ register_command(
 register_command(
     "tasks",
     tasks_command,
-    "Show your active Jira issues (not To Do, Done, or Resolved), or show details for a specific issue with /tasks <KEY>",
+    "Show your active Jira issues (not To Do, Done, or Resolved)",
+)
+
+register_command(
+    "tasks <KEY>",
+    tasks_command,
+    "Show details for Jira issue <KEY>",
 )
