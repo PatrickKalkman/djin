@@ -52,7 +52,7 @@ def tasks_command(args):
 
 # Register task commands
 register_command(
-    "completed",
+    "tasks completed",
     completed_command,
     "Show your completed Jira issues. Optional: specify number of days to look back (default: 7)",
 )
