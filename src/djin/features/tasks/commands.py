@@ -34,20 +34,20 @@ def completed_command(args):
 
 
 def tasks_command(args):
-    """Show ongoing Jira issues."""
+    """Show active Jira issues."""
     try:
         from djin.features.tasks.jira_client import get_my_issues
         
-        # Get only issues that are in progress (ongoing)
-        status_filter = "status = 'In Progress'"
+        # Get only issues that are active (not done or resolved)
+        status_filter = "status != 'Done' AND status != 'Resolved'"
         issues = get_my_issues(status_filter=status_filter)
         
         # Display issues
-        display_issues(issues, title="My Ongoing Issues")
+        display_issues(issues, title="My Active Issues")
         
         return True
     except Exception as e:
-        console.print(f"[red]Error showing ongoing issues: {str(e)}[/red]")
+        console.print(f"[red]Error showing active issues: {str(e)}[/red]")
         return False
 
 
@@ -61,5 +61,5 @@ register_command(
 register_command(
     "tasks",
     tasks_command,
-    "Show your ongoing Jira issues (In Progress status only)",
+    "Show your active Jira issues (not Done or Resolved)",
 )
