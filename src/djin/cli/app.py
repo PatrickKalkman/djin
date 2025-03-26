@@ -12,6 +12,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
+from djin.main import VERSION
+
 # Create console for rich output
 console = Console()
 
@@ -28,9 +30,10 @@ def display_welcome():
     welcome_text = Text()
     welcome_text.append("Welcome to ", style="white")
     welcome_text.append("Djin", style="bright_cyan")
+    welcome_text.append(f" v{VERSION}", style="bright_cyan")
     welcome_text.append(" - Your magical terminal assistant!", style="white")
 
-    panel = Panel(welcome_text, title="✨ Djin", border_style="cyan")
+    panel = Panel(welcome_text, title=f"✨ Djin v{VERSION}", border_style="cyan")
     console.print(panel)
     console.print("Type /help for available commands.")
 
