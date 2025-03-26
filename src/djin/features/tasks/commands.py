@@ -33,9 +33,32 @@ def completed_command(args):
         return False
 
 
+def tasks_command(args):
+    """Show active Jira issues."""
+    try:
+        from djin.features.tasks.jira_client import get_my_issues
+        
+        # Get active issues
+        issues = get_my_issues()
+        
+        # Display issues
+        display_issues(issues, title="My Active Issues")
+        
+        return True
+    except Exception as e:
+        console.print(f"[red]Error showing active issues: {str(e)}[/red]")
+        return False
+
+
 # Register task commands
 register_command(
     "completed",
     completed_command,
     "Show your completed Jira issues. Optional: specify number of days to look back (default: 7)",
+)
+
+register_command(
+    "tasks",
+    tasks_command,
+    "Show your active Jira issues",
 )
