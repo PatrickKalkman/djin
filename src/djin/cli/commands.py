@@ -19,7 +19,14 @@ def register_command(name, func, help_text):
 
 def route_command(cmd_name, args):
     """Route a command to its handler."""
-    if cmd_name in commands:
+    # Check for subcommands (e.g., "tasks completed")
+    full_cmd = f"{cmd_name} {args[0]}" if args else cmd_name
+    
+    if full_cmd in commands:
+        # If the full command (with first arg) is registered, use it
+        return commands[full_cmd]["func"](args[1:] if args else [])
+    elif cmd_name in commands:
+        # Otherwise use just the first part
         return commands[cmd_name]["func"](args)
     else:
         console.print(f"[red]Unknown command: {cmd_name}[/red]")
