@@ -47,16 +47,16 @@ def process_command(command):
         return
 
     cmd_name = cmd_parts[0].lower()
-    # args = cmd_parts[1:]
+    args = cmd_parts[1:]
 
-    # Basic command handling
-    if cmd_name == "help":
-        show_help()
-    elif cmd_name == "exit" or cmd_name == "quit":
+    # Use the command router from commands.py
+    from djin.cli.commands import route_command
+    result = route_command(cmd_name, args)
+    
+    # Handle exit command
+    if result == "EXIT":
         console.print("Goodbye! 👋")
         sys.exit(0)
-    else:
-        console.print(f"[yellow]Command not implemented yet: {cmd_name}[/yellow]")
 
 
 def add_note(text):
@@ -67,21 +67,9 @@ def add_note(text):
 
 def show_help():
     """Show available commands."""
-    help_text = """
-    Available commands:
-
-    /help           - Show this help message
-    /exit or /quit  - Exit Djin
-
-    Coming soon:
-    /task           - Task management commands
-    /time           - Time tracking commands
-    /note           - Note management commands
-    /moneymonk      - MoneyMonk integration commands
-
-    Type any text without a leading slash to add a note for the current task.
-    """
-    console.print(Panel(help_text, title="Djin Help", border_style="green"))
+    # Use the help command from commands.py
+    from djin.cli.commands import help_command
+    help_command([])
 
 
 def show_status():
