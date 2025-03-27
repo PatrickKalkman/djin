@@ -22,11 +22,12 @@ def todo_command(args):
         # Get the tasks API
         tasks_api = get_tasks_api()
 
-        # Call the API method to get todo tasks
+        # Call the API method to get todo tasks - returns pre-formatted output
         result = tasks_api.get_todo_tasks()
-
-        # Print the result (already formatted for display)
-        console.print(result)
+        
+        # Just return the result without printing it again
+        # The result is already a formatted string with the table
+        return result
 
         return True
     except Exception as e:
