@@ -7,15 +7,13 @@ from rich.panel import Panel
 from rich.table import Table
 
 from djin.cli.commands import register_command
-from djin.features.tasks.jira_client import (
-    create_jira_link,
-    display_issues,
-    get_issue_details,
-    get_my_completed_issues,
-)
+from djin.features.tasks.agent import TaskAgent
+from djin.features.tasks.jira_client import create_jira_link, display_issues
 
 # Create console for rich output
 console = Console()
+# Create task agent
+task_agent = TaskAgent()
 
 
 def completed_command(args):
@@ -28,7 +26,12 @@ def completed_command(args):
         if args and args[0].isdigit():
             days = int(args[0])
 
-        # Get completed issues
+        # Get completed tasks using the agent
+        tasks = task_agent.get_completed_tasks(days=days)
+        
+        # Convert tasks back to Jira issues for display
+        # This is temporary until we refactor display_issues to work with our new models
+        from djin.features.tasks.jira_client import get_my_completed_issues
         issues = get_my_completed_issues(days=days)
 
         # Display issues
@@ -46,10 +49,13 @@ def tasks_command(args):
         # If an issue key is provided, show details for that issue
         if args and len(args) == 1 and "-" in args[0]:
             return show_issue_details(args[0])
-            
-        from djin.features.tasks.jira_client import get_my_issues
         
-        # Get only issues that are active (not to do, done, or resolved)
+        # Get active tasks using the agent
+        tasks = task_agent.get_active_tasks()
+        
+        # Convert tasks back to Jira issues for display
+        # This is temporary until we refactor display_issues to work with our new models
+        from djin.features.tasks.jira_client import get_my_issues
         status_filter = "status != 'To Do' AND status != 'Done' AND status != 'Resolved'"
         issues = get_my_issues(status_filter=status_filter)
         
@@ -65,8 +71,8 @@ def tasks_command(args):
 def show_issue_details(issue_key):
     """Show detailed information about a specific Jira issue."""
     try:
-        # Get issue details
-        details = get_issue_details(issue_key)
+        # Get task details using the agent
+        details = task_agent.get_task_details(issue_key)
         
         # Create a table for the issue details
         table = Table(title=f"Issue Details: {create_jira_link(issue_key)}")
@@ -103,9 +109,12 @@ def show_issue_details(issue_key):
 def todo_command(args):
     """Show Jira issues in To Do status."""
     try:
-        from djin.features.tasks.jira_client import get_my_issues
+        # Get todo tasks using the agent
+        tasks = task_agent.get_todo_tasks()
         
-        # Get only issues that are in To Do status
+        # Convert tasks back to Jira issues for display
+        # This is temporary until we refactor display_issues to work with our new models
+        from djin.features.tasks.jira_client import get_my_issues
         status_filter = "status = 'To Do'"
         issues = get_my_issues(status_filter=status_filter)
         
@@ -115,6 +124,30 @@ def todo_command(args):
         return True
     except Exception as e:
         console.print(f"[red]Error showing To Do issues: {str(e)}[/red]")
+        return False
+
+
+def summarize_command(args):
+    """Generate a summary of tasks using LLM."""
+    try:
+        from djin.features.tasks.llm.client import TaskLLMClient
+        
+        # Create LLM client
+        llm_client = TaskLLMClient()
+        
+        # Get active and completed tasks
+        active_tasks = task_agent.get_active_tasks()
+        completed_tasks = task_agent.get_completed_tasks(days=7)
+        
+        # Generate report
+        report = llm_client.generate_task_report(active_tasks, completed_tasks)
+        
+        # Display report
+        console.print(Panel(report, title="Task Summary", border_style="green"))
+        
+        return True
+    except Exception as e:
+        console.print(f"[red]Error generating task summary: {str(e)}[/red]")
         return False
 
 
@@ -141,4 +174,10 @@ register_command(
     "tasks todo",
     todo_command,
     "Show your Jira issues in To Do status",
+)
+
+register_command(
+    "tasks summarize",
+    summarize_command,
+    "Generate a summary of your tasks using AI",
 )
