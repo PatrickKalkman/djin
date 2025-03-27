@@ -1,8 +1,14 @@
 # tasks/agent.py
+"""
+Task agent for Djin.
+
+This module provides an agent specialized in task operations.
+"""
+
 from djin.features.tasks.graph.workflow import create_task_fetching_graph
 
 
-class TasksAgent:
+class TaskAgent:
     def __init__(self):
         # Initialize the LangGraph workflows
         self.task_fetching_workflow = create_task_fetching_graph()
