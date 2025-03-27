@@ -62,6 +62,33 @@ def completed_command(args):
         return False
 
 
+def task_details_command(args):
+    """Show details for a specific Jira issue."""
+    try:
+        # Use the API layer to get the tasks agent
+        from djin.features.tasks.api import get_tasks_api
+
+        # Get the tasks API
+        tasks_api = get_tasks_api()
+        
+        # Check if issue key is provided
+        if not args or len(args) == 0:
+            console.print("[red]Error: Please provide a Jira issue key (e.g., /tasks PROJ-123)[/red]")
+            return False
+        
+        # Get the issue key from args
+        issue_key = args[0]
+        
+        # Call the API method to get task details
+        result = tasks_api.get_task_details(issue_key)
+        
+        # Return the result
+        return result
+    except Exception as e:
+        console.print(f"[red]Error showing task details: {str(e)}[/red]")
+        return False
+
+
 register_command(
     "tasks todo",
     todo_command,
@@ -72,4 +99,10 @@ register_command(
     "tasks completed",
     completed_command,
     "Show your completed Jira issues (default: last 7 days)",
+)
+
+register_command(
+    "tasks",
+    task_details_command,
+    "Show details for a specific Jira issue (e.g., /tasks PROJ-123)",
 )

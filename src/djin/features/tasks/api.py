@@ -45,3 +45,15 @@ class TaskAPI:
             str: Formatted output of completed tasks
         """
         return self._agent.process_completed_request(days)
+        
+    def get_task_details(self, issue_key: str) -> str:
+        """
+        Get details for a specific task.
+        
+        Args:
+            issue_key: The Jira issue key (e.g., PROJ-123)
+            
+        Returns:
+            str: Formatted output of task details
+        """
+        return self._agent.process_task_details_request(issue_key)

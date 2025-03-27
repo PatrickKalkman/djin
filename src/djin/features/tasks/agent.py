@@ -51,3 +51,25 @@ class TaskAgent:
 
         # Return the formatted output
         return final_state["formatted_output"]
+        
+    def process_task_details_request(self, issue_key: str):
+        """Process a request to show details for a specific task
+        
+        Args:
+            issue_key: The Jira issue key (e.g., PROJ-123)
+        """
+        # Create initial state
+        initial_state = {
+            "request_type": "task_details",
+            "issue_key": issue_key,
+            "raw_tasks": [],
+            "processed_tasks": [],
+            "formatted_output": "",
+            "errors": [],
+        }
+
+        # Execute the workflow - all logic happens in graph nodes
+        final_state = self.task_fetching_workflow.invoke(initial_state)
+
+        # Return the formatted output
+        return final_state["formatted_output"]
