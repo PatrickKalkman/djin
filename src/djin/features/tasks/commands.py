@@ -111,19 +111,18 @@ def show_issue_details(issue_key):
 def todo_command(args):
     """Show Jira issues in To Do status."""
     try:
-        # Get todo tasks using the agent
-        tasks = task_agent.get_todo_tasks()
-
-        # Convert tasks back to Jira issues for display
-        # This is temporary until we refactor display_issues to work with our new models
-        from djin.features.tasks.jira_client import get_my_issues
-
-        status_filter = "status = 'To Do'"
-        issues = get_my_issues(status_filter=status_filter)
-
-        # Display issues
-        display_issues(issues, title="My To Do Issues")
-
+        # Use the API layer to get the tasks agent
+        from djin.features.tasks.api import get_tasks_api
+        
+        # Get the tasks API
+        tasks_api = get_tasks_api()
+        
+        # Call the API method to get todo tasks
+        result = tasks_api.get_todo_tasks()
+        
+        # Print the result (already formatted for display)
+        console.print(result)
+        
         return True
     except Exception as e:
         console.print(f"[red]Error showing To Do issues: {str(e)}[/red]")
