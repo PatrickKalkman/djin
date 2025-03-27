@@ -28,10 +28,11 @@ def completed_command(args):
 
         # Get completed tasks using the agent
         tasks = task_agent.get_completed_tasks(days=days)
-        
+
         # Convert tasks back to Jira issues for display
         # This is temporary until we refactor display_issues to work with our new models
         from djin.features.tasks.jira_client import get_my_completed_issues
+
         issues = get_my_completed_issues(days=days)
 
         # Display issues
@@ -49,19 +50,20 @@ def tasks_command(args):
         # If an issue key is provided, show details for that issue
         if args and len(args) == 1 and "-" in args[0]:
             return show_issue_details(args[0])
-        
+
         # Get active tasks using the agent
         tasks = task_agent.get_active_tasks()
-        
+
         # Convert tasks back to Jira issues for display
         # This is temporary until we refactor display_issues to work with our new models
         from djin.features.tasks.jira_client import get_my_issues
+
         status_filter = "status != 'To Do' AND status != 'Done' AND status != 'Resolved'"
         issues = get_my_issues(status_filter=status_filter)
-        
+
         # Display issues
         display_issues(issues, title="My Active Issues")
-        
+
         return True
     except Exception as e:
         console.print(f"[red]Error showing active issues: {str(e)}[/red]")
@@ -73,13 +75,13 @@ def show_issue_details(issue_key):
     try:
         # Get task details using the agent
         details = task_agent.get_task_details(issue_key)
-        
+
         # Create a table for the issue details
         table = Table(title=f"Issue Details: {create_jira_link(issue_key)}")
-        
+
         table.add_column("Field", style="cyan")
         table.add_column("Value")
-        
+
         # Add rows for each field
         table.add_row("Summary", details["summary"])
         table.add_row("Status", details["status"])
@@ -90,16 +92,16 @@ def show_issue_details(issue_key):
         table.add_row("Created", details["created"])
         table.add_row("Updated", details["updated"])
         table.add_row("Time Spent", details.get("worklog_formatted", ""))
-        
+
         if "due_date" in details:
             table.add_row("Due Date", details["due_date"])
-        
+
         console.print(table)
-        
+
         # Show description in a panel if it exists
         if details["description"]:
             console.print(Panel(details["description"], title="Description", border_style="cyan"))
-        
+
         return True
     except Exception as e:
         console.print(f"[red]Error showing issue details: {str(e)}[/red]")
@@ -111,16 +113,17 @@ def todo_command(args):
     try:
         # Get todo tasks using the agent
         tasks = task_agent.get_todo_tasks()
-        
+
         # Convert tasks back to Jira issues for display
         # This is temporary until we refactor display_issues to work with our new models
         from djin.features.tasks.jira_client import get_my_issues
+
         status_filter = "status = 'To Do'"
         issues = get_my_issues(status_filter=status_filter)
-        
+
         # Display issues
         display_issues(issues, title="My To Do Issues")
-        
+
         return True
     except Exception as e:
         console.print(f"[red]Error showing To Do issues: {str(e)}[/red]")
@@ -131,20 +134,20 @@ def summarize_command(args):
     """Generate a summary of tasks using LLM."""
     try:
         from djin.features.tasks.llm.client import TaskLLMClient
-        
+
         # Create LLM client
         llm_client = TaskLLMClient()
-        
+
         # Get active and completed tasks
         active_tasks = task_agent.get_active_tasks()
         completed_tasks = task_agent.get_completed_tasks(days=7)
-        
+
         # Generate report
         report = llm_client.generate_task_report(active_tasks, completed_tasks)
-        
+
         # Display report
         console.print(Panel(report, title="Task Summary", border_style="green"))
-        
+
         return True
     except Exception as e:
         console.print(f"[red]Error generating task summary: {str(e)}[/red]")

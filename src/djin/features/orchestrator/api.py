@@ -4,7 +4,7 @@ Public API for the orchestrator agent.
 This module provides a public interface for other agents to call the orchestrator agent.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from djin.features.orchestrator.agent import OrchestratorAgent
 

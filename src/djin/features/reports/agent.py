@@ -6,7 +6,6 @@ This module provides an agent specialized in report generation.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
 
 from djin.common.errors import DjinError
 from djin.features.reports.llm.client import ReportLLMClient
@@ -34,14 +33,14 @@ class ReportAgent:
         try:
             # Get today's date
             today = datetime.now().strftime("%Y-%m-%d")
-            
+
             # Get active and completed tasks for today
             active_tasks = self._task_api.get_active_tasks()
             completed_tasks = self._task_api.get_completed_tasks(days=1)
-            
+
             # Generate report
             report = self._llm_client.generate_daily_report(active_tasks, completed_tasks, today)
-            
+
             return report
         except Exception as e:
             raise DjinError(f"Failed to generate daily report: {str(e)}")
@@ -58,16 +57,14 @@ class ReportAgent:
             today = datetime.now()
             start_of_week = (today - timedelta(days=today.weekday())).strftime("%Y-%m-%d")
             end_of_week = (today + timedelta(days=6 - today.weekday())).strftime("%Y-%m-%d")
-            
+
             # Get active and completed tasks for the week
             active_tasks = self._task_api.get_active_tasks()
             completed_tasks = self._task_api.get_completed_tasks(days=7)
-            
+
             # Generate report
-            report = self._llm_client.generate_weekly_report(
-                active_tasks, completed_tasks, start_of_week, end_of_week
-            )
-            
+            report = self._llm_client.generate_weekly_report(active_tasks, completed_tasks, start_of_week, end_of_week)
+
             return report
         except Exception as e:
             raise DjinError(f"Failed to generate weekly report: {str(e)}")
@@ -87,16 +84,14 @@ class ReportAgent:
             today = datetime.now()
             start_date = (today - timedelta(days=days)).strftime("%Y-%m-%d")
             end_date = today.strftime("%Y-%m-%d")
-            
+
             # Get active and completed tasks
             active_tasks = self._task_api.get_active_tasks()
             completed_tasks = self._task_api.get_completed_tasks(days=days)
-            
+
             # Generate report
-            report = self._llm_client.generate_custom_report(
-                active_tasks, completed_tasks, start_date, end_date, days
-            )
-            
+            report = self._llm_client.generate_custom_report(active_tasks, completed_tasks, start_date, end_date, days)
+
             return report
         except Exception as e:
             raise DjinError(f"Failed to generate custom report: {str(e)}")

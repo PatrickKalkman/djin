@@ -4,14 +4,10 @@ Task agent for Djin.
 This module provides an agent specialized in task operations.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from djin.common.errors import JiraError
-from djin.features.tasks.jira_client import (
-    get_issue_details,
-    get_my_completed_issues,
-    get_my_issues,
-)
+from djin.features.tasks.jira_client import get_issue_details, get_my_completed_issues, get_my_issues
 
 
 class TaskAgent:
@@ -28,7 +24,7 @@ class TaskAgent:
             # Get only issues that are active (not to do, done, or resolved)
             status_filter = "status != 'To Do' AND status != 'Done' AND status != 'Resolved'"
             issues = get_my_issues(status_filter=status_filter)
-            
+
             # Convert Jira issues to dictionaries
             return [self._issue_to_dict(issue) for issue in issues]
         except Exception as e:
@@ -45,7 +41,7 @@ class TaskAgent:
             # Get only issues that are in To Do status
             status_filter = "status = 'To Do'"
             issues = get_my_issues(status_filter=status_filter)
-            
+
             # Convert Jira issues to dictionaries
             return [self._issue_to_dict(issue) for issue in issues]
         except Exception as e:
@@ -63,7 +59,7 @@ class TaskAgent:
         """
         try:
             issues = get_my_completed_issues(days=days)
-            
+
             # Convert Jira issues to dictionaries
             return [self._issue_to_dict(issue) for issue in issues]
         except Exception as e:

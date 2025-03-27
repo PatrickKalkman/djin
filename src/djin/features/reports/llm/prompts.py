@@ -6,8 +6,8 @@ This module provides prompts for interacting with LLMs for report-related operat
 
 # Prompt for generating a daily report
 DAILY_REPORT_PROMPT = """
-You are an assistant that generates daily work reports. Given the following lists of 
-active and completed tasks for {date}, generate a professional daily report.
+You are an assistant that generates daily work reports. Given the following lists of
+ active and completed tasks for {date}, generate a professional daily report.
 
 Active Tasks:
 {active_tasks}
@@ -26,8 +26,8 @@ Daily Report:
 
 # Prompt for generating a weekly report
 WEEKLY_REPORT_PROMPT = """
-You are an assistant that generates weekly work reports. Given the following lists of 
-active and completed tasks for the week of {start_date} to {end_date}, generate a professional weekly report.
+You are an assistant that generates weekly work reports. Given the following lists of
+ active and completed tasks for the week of {start_date} to {end_date}, generate a professional weekly report.
 
 Active Tasks:
 {active_tasks}
@@ -48,9 +48,9 @@ Weekly Report:
 
 # Prompt for generating a custom report
 CUSTOM_REPORT_PROMPT = """
-You are an assistant that generates work reports. Given the following lists of 
-active and completed tasks for the period of {start_date} to {end_date} ({days} days), 
-generate a professional report.
+You are an assistant that generates work reports. Given the following lists of
+ active and completed tasks for the period of {start_date} to {end_date} ({days} days),
+ generate a professional report.
 
 Active Tasks:
 {active_tasks}

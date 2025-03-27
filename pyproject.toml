@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "jira>=3.8.0",
+    "langgraph>=0.3.21",
     "prompt-toolkit>=3.0.50",
     "python-dotenv>=1.1.0",
     "rich>=13.9.4",
@@ -29,11 +30,11 @@ packages = ["src/djin"]
 lint.select = ["E", "F", "I"]
 # Allow unused variables when underscore-prefixed
 lint.dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+lint.ignore = ["E272"]
 # Python version compatibility
 target-version = "py312"
 # Line length matches black's default
 line-length = 120
-lint.ignore = ["E272"]
 
 [dependency-groups]
 dev = [

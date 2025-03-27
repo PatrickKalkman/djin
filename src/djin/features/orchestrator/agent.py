@@ -5,7 +5,7 @@ This module provides an agent for coordinating between different agents.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from djin.common.errors import DjinError
 from djin.features.reports.api import ReportAPI
@@ -57,10 +57,10 @@ class OrchestratorAgent:
             active_tasks = self._task_api.get_active_tasks()
             todo_tasks = self._task_api.get_todo_tasks()
             completed_tasks = self._task_api.get_completed_tasks(days=7)
-            
+
             # Calculate total time spent
             total_time_spent = sum(task.get("worklog_seconds", 0) for task in active_tasks + completed_tasks)
-            
+
             # Return overview
             return {
                 "active_count": len(active_tasks),

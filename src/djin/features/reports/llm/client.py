@@ -5,14 +5,10 @@ This module provides a client for interacting with LLMs for report-related opera
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from djin.common.errors import DjinError
-from djin.features.reports.llm.prompts import (
-    CUSTOM_REPORT_PROMPT,
-    DAILY_REPORT_PROMPT,
-    WEEKLY_REPORT_PROMPT,
-)
+from djin.features.reports.llm.prompts import CUSTOM_REPORT_PROMPT, DAILY_REPORT_PROMPT, WEEKLY_REPORT_PROMPT
 
 # Set up logging
 logger = logging.getLogger("djin.reports.llm")
@@ -51,18 +47,20 @@ class ReportLLMClient:
         try:
             # TODO: Implement actual LLM call with proper prompting
             logger.info(f"Generating daily report for {date}")
-            
+
             # Format tasks for the prompt
-            active_tasks_str = "\n".join([f"- {task['key']}: {task['summary']} ({task['status']})" for task in active_tasks])
+            active_tasks_str = "\n".join(
+                [f"- {task['key']}: {task['summary']} ({task['status']})" for task in active_tasks]
+            )
             completed_tasks_str = "\n".join([f"- {task['key']}: {task['summary']}" for task in completed_tasks])
-            
+
             # Prepare prompt
             prompt = DAILY_REPORT_PROMPT.format(
                 date=date,
                 active_tasks=active_tasks_str,
                 completed_tasks=completed_tasks_str,
             )
-            
+
             # Placeholder implementation
             return f"Daily Report for {date}\n\nActive Tasks:\n{active_tasks_str}\n\nCompleted Tasks:\n{completed_tasks_str}"
         except Exception as e:
@@ -93,11 +91,13 @@ class ReportLLMClient:
         try:
             # TODO: Implement actual LLM call with proper prompting
             logger.info(f"Generating weekly report for {start_date} to {end_date}")
-            
+
             # Format tasks for the prompt
-            active_tasks_str = "\n".join([f"- {task['key']}: {task['summary']} ({task['status']})" for task in active_tasks])
+            active_tasks_str = "\n".join(
+                [f"- {task['key']}: {task['summary']} ({task['status']})" for task in active_tasks]
+            )
             completed_tasks_str = "\n".join([f"- {task['key']}: {task['summary']}" for task in completed_tasks])
-            
+
             # Prepare prompt
             prompt = WEEKLY_REPORT_PROMPT.format(
                 start_date=start_date,
@@ -105,7 +105,7 @@ class ReportLLMClient:
                 active_tasks=active_tasks_str,
                 completed_tasks=completed_tasks_str,
             )
-            
+
             # Placeholder implementation
             return f"Weekly Report for {start_date} to {end_date}\n\nActive Tasks:\n{active_tasks_str}\n\nCompleted Tasks:\n{completed_tasks_str}"
         except Exception as e:
@@ -138,11 +138,13 @@ class ReportLLMClient:
         try:
             # TODO: Implement actual LLM call with proper prompting
             logger.info(f"Generating custom report for {start_date} to {end_date} ({days} days)")
-            
+
             # Format tasks for the prompt
-            active_tasks_str = "\n".join([f"- {task['key']}: {task['summary']} ({task['status']})" for task in active_tasks])
+            active_tasks_str = "\n".join(
+                [f"- {task['key']}: {task['summary']} ({task['status']})" for task in active_tasks]
+            )
             completed_tasks_str = "\n".join([f"- {task['key']}: {task['summary']}" for task in completed_tasks])
-            
+
             # Prepare prompt
             prompt = CUSTOM_REPORT_PROMPT.format(
                 start_date=start_date,
@@ -151,7 +153,7 @@ class ReportLLMClient:
                 active_tasks=active_tasks_str,
                 completed_tasks=completed_tasks_str,
             )
-            
+
             # Placeholder implementation
             return f"Custom Report for {start_date} to {end_date} ({days} days)\n\nActive Tasks:\n{active_tasks_str}\n\nCompleted Tasks:\n{completed_tasks_str}"
         except Exception as e:
