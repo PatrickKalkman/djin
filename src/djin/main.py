@@ -7,14 +7,9 @@ import sys
 
 from rich.console import Console
 
-# Import version
-from djin.__version__ import __version__ as VERSION
-
-# Import Djin modules
 from djin.cli.app import main_loop
 from djin.common.config import is_configured, setup_config
 from djin.common.errors import handle_error
-from djin.db.schema import backup_database, init_database, reset_database
 
 # Create console for rich output
 console = Console()
@@ -52,35 +47,8 @@ def main():
         # Handle setup command
         if args.setup:
             setup_config()
-            init_database()
             console.print("[green]Setup complete! You can now run Djin.[/green]")
             return 0
-
-        # Handle reset database command
-        if args.reset_db:
-            confirm = input("WARNING: This will delete all your data. Are you sure? (y/N): ")
-            if confirm.lower() == "y":
-                backup_path = backup_database()
-                if backup_path:
-                    console.print(f"[yellow]Database backed up to: {backup_path}[/yellow]")
-
-                reset_database()
-                console.print("[green]Database reset complete.[/green]")
-            else:
-                console.print("[yellow]Database reset cancelled.[/yellow]")
-            return 0
-
-        # Handle backup database command
-        if args.backup_db:
-            backup_path = backup_database()
-            if backup_path:
-                console.print(f"[green]Database backed up to: {backup_path}[/green]")
-            else:
-                console.print("[yellow]No database to backup.[/yellow]")
-            return 0
-
-        # Ensure database is initialized
-        init_database()
 
         # Check if configured
         if not is_configured():

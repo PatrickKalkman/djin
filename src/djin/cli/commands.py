@@ -21,7 +21,7 @@ def route_command(cmd_name, args):
     """Route a command to its handler."""
     # Check for subcommands (e.g., "tasks completed")
     full_cmd = f"{cmd_name} {args[0]}" if args else cmd_name
-    
+
     if full_cmd in commands:
         # If the full command (with first arg) is registered, use it
         return commands[full_cmd]["func"](args[1:] if args else [])

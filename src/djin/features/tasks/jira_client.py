@@ -74,8 +74,11 @@ def get_my_issues(status_filter: str = None) -> List[Any]:
         if status_filter:
             jql = f"assignee = currentUser() AND {status_filter} ORDER BY priority DESC, updated DESC"
         else:
-            jql = "assignee = currentUser() AND status != Done AND status != Resolved ORDER BY priority DESC, updated DESC"
-        
+            jql = (
+                "assignee = currentUser() AND status != Done AND status != Resolved "
+                " ORDER BY priority DESC, updated DESC"
+            )
+
         issues = jira.search_issues(jql)
 
         # Fetch worklog information for each issue
