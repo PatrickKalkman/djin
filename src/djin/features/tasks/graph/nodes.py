@@ -5,7 +5,7 @@ This module provides node functions for LangGraph workflows.
 """
 
 from djin.features.tasks.display import format_tasks_table
-from djin.features.tasks.jira_client import get_my_issues, get_my_completed_issues
+from djin.features.tasks.jira_client import get_my_completed_issues, get_my_issues
 
 
 # Node for fetching tasks
@@ -66,7 +66,7 @@ def format_output_node(state):
         title = "My In Progress Tasks"
     elif state.request_type == "completed":
         title = f"My Completed Tasks (Last {state.days} Days)"
-    
+
     table = format_tasks_table(state.processed_tasks, title=title)
 
     # Capture the output as a string

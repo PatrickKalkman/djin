@@ -6,6 +6,7 @@ This module provides functions for formatting and displaying tasks.
 
 from rich.table import Table
 from rich.text import Text
+
 from djin.common.config import load_config
 from djin.features.tasks.jira_client import format_time_spent
 
@@ -42,11 +43,11 @@ def create_jira_link(issue_key: str) -> Text:
 def format_tasks_table(tasks, title="Tasks"):
     """
     Format tasks as a Rich table.
-    
+
     Args:
         tasks: List of task dictionaries
         title: Title for the table
-        
+
     Returns:
         Table: A Rich Table object
     """
