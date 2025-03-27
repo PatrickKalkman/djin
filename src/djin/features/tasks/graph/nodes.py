@@ -5,7 +5,7 @@ This module provides node functions for LangGraph workflows.
 """
 
 from djin.features.tasks.display import format_tasks_table
-from djin.features.tasks.jira_client import get_my_issues
+from djin.features.tasks.jira_client import get_my_issues, get_my_completed_issues
 
 
 # Node for fetching tasks
