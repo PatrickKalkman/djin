@@ -100,6 +100,24 @@ def show_issue_details(issue_key):
         return False
 
 
+def todo_command(args):
+    """Show Jira issues in To Do status."""
+    try:
+        from djin.features.tasks.jira_client import get_my_issues
+        
+        # Get only issues that are in To Do status
+        status_filter = "status = 'To Do'"
+        issues = get_my_issues(status_filter=status_filter)
+        
+        # Display issues
+        display_issues(issues, title="My To Do Issues")
+        
+        return True
+    except Exception as e:
+        console.print(f"[red]Error showing To Do issues: {str(e)}[/red]")
+        return False
+
+
 # Register task commands
 register_command(
     "tasks completed",
@@ -117,4 +135,10 @@ register_command(
     "tasks <KEY>",
     tasks_command,
     "Show details for Jira issue <KEY>",
+)
+
+register_command(
+    "tasks todo",
+    todo_command,
+    "Show your Jira issues in To Do status",
 )
