@@ -20,8 +20,8 @@ def create_task_fetching_graph():
     workflow.add_node("process_tasks", process_tasks_node)
     workflow.add_node("format_output", format_output_node)
 
-    # Define the flow - add START edge to the first node
-    workflow.add_edge("START", "fetch_tasks")
+    # Define the flow
+    workflow.set_entry_point("fetch_tasks")
     workflow.add_edge("fetch_tasks", "process_tasks")
     workflow.add_edge("process_tasks", "format_output")
 
