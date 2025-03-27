@@ -19,6 +19,9 @@ def fetch_tasks_node(state):
         elif state.request_type == "in_progress":
             status_filter = "status = 'In Progress'"
             raw_tasks = get_my_issues(status_filter=status_filter)
+        elif state.request_type == "completed":
+            days = getattr(state, "days", 7)
+            raw_tasks = get_my_completed_issues(days=days)
         else:
             raw_tasks = get_my_issues()
 
@@ -55,8 +58,16 @@ def format_output_node(state):
     """Format the tasks for display"""
     from rich.console import Console
 
-    # Format the tasks as a table
-    table = format_tasks_table(state.processed_tasks, title="My To Do Tasks")
+    # Format the tasks as a table with appropriate title based on request type
+    title = "My Tasks"
+    if state.request_type == "todo":
+        title = "My To Do Tasks"
+    elif state.request_type == "in_progress":
+        title = "My In Progress Tasks"
+    elif state.request_type == "completed":
+        title = f"My Completed Tasks (Last {state.days} Days)"
+    
+    table = format_tasks_table(state.processed_tasks, title=title)
 
     # Capture the output as a string
     console = Console(record=True)

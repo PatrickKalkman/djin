@@ -35,8 +35,41 @@ def todo_command(args):
         return False
 
 
+def completed_command(args):
+    """Show completed Jira issues."""
+    try:
+        # Use the API layer to get the tasks agent
+        from djin.features.tasks.api import get_tasks_api
+
+        # Get the tasks API
+        tasks_api = get_tasks_api()
+        
+        # Parse days argument if provided
+        days = 7  # Default
+        if args and len(args) > 0:
+            try:
+                days = int(args[0])
+            except ValueError:
+                console.print("[yellow]Invalid days value, using default (7)[/yellow]")
+        
+        # Call the API method to get completed tasks
+        result = tasks_api.get_completed_tasks(days)
+        
+        # Return the result
+        return result
+    except Exception as e:
+        console.print(f"[red]Error showing completed issues: {str(e)}[/red]")
+        return False
+
+
 register_command(
     "tasks todo",
     todo_command,
     "Show your Jira issues in To Do status",
+)
+
+register_command(
+    "tasks completed",
+    completed_command,
+    "Show your completed Jira issues (default: last 7 days)",
 )

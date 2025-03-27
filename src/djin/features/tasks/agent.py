@@ -29,3 +29,25 @@ class TaskAgent:
 
         # Return the formatted output
         return final_state["formatted_output"]
+        
+    def process_completed_request(self, days: int = 7):
+        """Process a request to show completed tasks
+        
+        Args:
+            days: Number of days to look back (default: 7)
+        """
+        # Create initial state
+        initial_state = {
+            "request_type": "completed",
+            "days": days,
+            "raw_tasks": [],
+            "processed_tasks": [],
+            "formatted_output": "",
+            "errors": [],
+        }
+
+        # Execute the workflow - all logic happens in graph nodes
+        final_state = self.task_fetching_workflow.invoke(initial_state)
+
+        # Return the formatted output
+        return final_state["formatted_output"]
