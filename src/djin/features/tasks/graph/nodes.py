@@ -9,7 +9,7 @@ from djin.features.tasks.jira_client import get_my_issues
 
 
 # Node for fetching tasks
-async def fetch_tasks_node(state):
+def fetch_tasks_node(state):
     """Fetch tasks from Jira"""
     try:
         # Fetch based on request type
@@ -28,7 +28,7 @@ async def fetch_tasks_node(state):
 
 
 # Node for processing tasks
-async def process_tasks_node(state):
+def process_tasks_node(state):
     """Process the raw tasks using LLM if needed"""
     # For simple todo listing, we might not need LLM processing
     # But this node allows for more complex processing in the future
@@ -51,7 +51,7 @@ async def process_tasks_node(state):
 
 
 # Node for formatting output
-async def format_output_node(state):
+def format_output_node(state):
     """Format the tasks for display"""
     from rich.console import Console
 
