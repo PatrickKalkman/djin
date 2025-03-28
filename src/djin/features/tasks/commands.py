@@ -30,10 +30,27 @@ def todo_command(args):
         # Just return the result without printing it again
         # The result is already a formatted string with the table
         return result
-
-        return True
     except Exception as e:
         console.print(f"[red]Error showing To Do issues: {str(e)}[/red]")
+        return False
+
+
+def active_command(args):
+    """Show all active Jira issues."""
+    try:
+        # Use the API layer to get the tasks agent
+        from djin.features.tasks.api import get_tasks_api
+
+        # Get the tasks API
+        tasks_api = get_tasks_api()
+
+        # Call the API method to get active tasks
+        result = tasks_api.get_active_tasks()
+
+        # Return the result
+        return result
+    except Exception as e:
+        console.print(f"[red]Error showing active issues: {str(e)}[/red]")
         return False
 
 
@@ -128,6 +145,12 @@ register_command(
     "tasks todo",
     todo_command,
     "Show your Jira issues in To Do status",
+)
+
+register_command(
+    "tasks active",
+    active_command,
+    "Show all your active Jira issues",
 )
 
 register_command(

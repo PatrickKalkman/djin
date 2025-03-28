@@ -19,6 +19,10 @@ def fetch_tasks_node(state):
         elif state.request_type == "in_progress":
             status_filter = "status = 'In Progress'"
             raw_tasks = get_my_issues(status_filter=status_filter)
+        elif state.request_type == "active":
+            # Active tasks are all non-completed tasks
+            status_filter = "status != 'Done' AND status != 'Resolved'"
+            raw_tasks = get_my_issues(status_filter=status_filter)
         elif state.request_type == "completed":
             days = getattr(state, "days", 7)
             raw_tasks = get_my_completed_issues(days=days)
@@ -130,6 +134,8 @@ def format_output_node(state):
             title = "My To Do Tasks"
         elif state.request_type == "in_progress":
             title = "My In Progress Tasks"
+        elif state.request_type == "active":
+            title = "My Active Tasks"
         elif state.request_type == "completed":
             title = f"My Completed Tasks (Last {state.days} Days)"
 

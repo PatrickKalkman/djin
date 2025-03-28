@@ -33,6 +33,15 @@ class TaskAPI:
             str: Formatted output of todo tasks
         """
         return self._agent.process_todo_request()
+        
+    def get_active_tasks(self) -> str:
+        """
+        Get all active (non-completed) tasks for the current user.
+
+        Returns:
+            str: Formatted output of active tasks
+        """
+        return self._agent.process_active_request()
 
     def get_completed_tasks(self, days: int = 7) -> str:
         """

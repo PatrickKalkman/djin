@@ -29,6 +29,23 @@ class TaskAgent:
 
         # Return the formatted output
         return final_state["formatted_output"]
+        
+    def process_active_request(self):
+        """Process a request to show active tasks (all non-completed tasks)"""
+        # Create initial state
+        initial_state = {
+            "request_type": "active",
+            "raw_tasks": [],
+            "processed_tasks": [],
+            "formatted_output": "",
+            "errors": [],
+        }
+
+        # Execute the workflow - all logic happens in graph nodes
+        final_state = self.task_fetching_workflow.invoke(initial_state)
+
+        # Return the formatted output
+        return final_state["formatted_output"]
 
     def process_set_status_request(self, issue_key: str, status_name: str) -> str:
         """Process a request to set the status of a specific task
