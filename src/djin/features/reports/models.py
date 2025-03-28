@@ -6,7 +6,7 @@ This module provides data models for report generation.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 
 from djin.features.tasks.models import Task
 

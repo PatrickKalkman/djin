@@ -19,10 +19,10 @@ def daily_report_command(args):
     try:
         # Generate daily report
         report = report_agent.generate_daily_report()
-        
+
         # Display report
         console.print(Panel(report, title="Daily Report", border_style="green"))
-        
+
         return True
     except Exception as e:
         console.print(f"[red]Error generating daily report: {str(e)}[/red]")
@@ -34,10 +34,10 @@ def weekly_report_command(args):
     try:
         # Generate weekly report
         report = report_agent.generate_weekly_report()
-        
+
         # Display report
         console.print(Panel(report, title="Weekly Report", border_style="green"))
-        
+
         return True
     except Exception as e:
         console.print(f"[red]Error generating weekly report: {str(e)}[/red]")
@@ -49,17 +49,17 @@ def custom_report_command(args):
     try:
         # Default to 7 days if no argument provided
         days = 7
-        
+
         # Parse days argument if provided
         if args and args[0].isdigit():
             days = int(args[0])
-        
+
         # Generate custom report
         report = report_agent.generate_custom_report(days=days)
-        
+
         # Display report
         console.print(Panel(report, title=f"Custom Report (Last {days} Days)", border_style="green"))
-        
+
         return True
     except Exception as e:
         console.print(f"[red]Error generating custom report: {str(e)}[/red]")

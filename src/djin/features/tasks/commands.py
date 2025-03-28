@@ -24,7 +24,7 @@ def todo_command(args):
 
         # Call the API method to get todo tasks - returns pre-formatted output
         result = tasks_api.get_todo_tasks()
-        
+
         # Just return the result without printing it again
         # The result is already a formatted string with the table
         return result
@@ -43,7 +43,7 @@ def completed_command(args):
 
         # Get the tasks API
         tasks_api = get_tasks_api()
-        
+
         # Parse days argument if provided
         days = 7  # Default
         if args and len(args) > 0:
@@ -51,10 +51,10 @@ def completed_command(args):
                 days = int(args[0])
             except ValueError:
                 console.print("[yellow]Invalid days value, using default (7)[/yellow]")
-        
+
         # Call the API method to get completed tasks
         result = tasks_api.get_completed_tasks(days)
-        
+
         # Return the result
         return result
     except Exception as e:
@@ -70,18 +70,18 @@ def task_details_command(args):
 
         # Get the tasks API
         tasks_api = get_tasks_api()
-        
+
         # Check if issue key is provided
         if not args or len(args) == 0:
             console.print("[red]Error: Please provide a Jira issue key (e.g., /tasks PROJ-123)[/red]")
             return False
-        
+
         # Get the issue key from args
         issue_key = args[0]
-        
+
         # Call the API method to get task details
         result = tasks_api.get_task_details(issue_key)
-        
+
         # Return the result
         return result
     except Exception as e:
