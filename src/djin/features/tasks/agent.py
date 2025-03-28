@@ -68,6 +68,28 @@ class TaskAgent:
 
         # Return the formatted output
         return final_state["formatted_output"]
+        
+    def process_assigned_today_request(self, date_str: str = None):
+        """Process a request to show tasks assigned to the user on a specific date
+        
+        Args:
+            date_str: Date string in YYYY-MM-DD format (default: today)
+        """
+        # Create initial state
+        initial_state = {
+            "request_type": "assigned_today",
+            "date": date_str,  # None means today
+            "raw_tasks": [],
+            "processed_tasks": [],
+            "formatted_output": "",
+            "errors": [],
+        }
+
+        # Execute the workflow - all logic happens in graph nodes
+        final_state = self.task_fetching_workflow.invoke(initial_state)
+
+        # Return the formatted output
+        return final_state["formatted_output"]
 
     def process_set_status_request(self, issue_key: str, status_name: str) -> str:
         """Process a request to set the status of a specific task

@@ -93,6 +93,45 @@ def worked_on_command(args):
         return False
 
 
+def assigned_today_command(args):
+    """Show Jira issues assigned to the user on a specific date."""
+    try:
+        # Use the API layer to get the tasks agent
+        from djin.features.tasks.api import get_tasks_api
+        import logging
+
+        logger = logging.getLogger("djin.tasks")
+        
+        # Get the tasks API
+        tasks_api = get_tasks_api()
+        
+        # Parse date argument if provided
+        date_str = None  # Default to today
+        if args and len(args) > 0:
+            date_str = args[0]
+            # Validate date format
+            from datetime import datetime
+            try:
+                datetime.strptime(date_str, "%Y-%m-%d")
+            except ValueError:
+                console.print("[red]Invalid date format. Please use YYYY-MM-DD format.[/red]")
+                return False
+
+        # Log that we're fetching assigned tasks
+        display_date = date_str or "today"
+        logger.info(f"Fetching tasks assigned on {display_date}")
+        console.print(f"[cyan]Searching for tasks assigned to you on {display_date}...[/cyan]")
+        
+        # Call the API method to get assigned tasks
+        result = tasks_api.get_assigned_today_tasks(date_str)
+
+        # Return the result
+        return result
+    except Exception as e:
+        console.print(f"[red]Error showing assigned issues: {str(e)}[/red]")
+        return False
+
+
 def completed_command(args):
     """Show completed Jira issues."""
     try:
@@ -196,6 +235,12 @@ register_command(
     "tasks worked-on",
     worked_on_command,
     "Show Jira issues you worked on for a specific date (default: today)",
+)
+
+register_command(
+    "tasks assigned-today",
+    assigned_today_command,
+    "Show Jira issues assigned to you on a specific date (default: today)",
 )
 
 register_command(

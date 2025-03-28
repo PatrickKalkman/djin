@@ -539,6 +539,54 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
         raise JiraError(f"Failed to get issues worked on for {date_str or 'today'}: {str(e)}")
 
 
+def get_assigned_today_issues(date_str: str = None) -> List[Any]:
+    """
+    Get issues that were assigned to the current user on a specific date.
+    
+    Args:
+        date_str: Date string in YYYY-MM-DD format (default: today)
+        
+    Returns:
+        List[Any]: List of JIRA issue objects
+        
+    Raises:
+        JiraError: If the search fails
+    """
+    from datetime import datetime, date
+    
+    jira = get_jira_client()
+    
+    try:
+        # If no date provided, use today
+        if not date_str:
+            target_date = date.today().strftime("%Y-%m-%d")
+        else:
+            # Validate date format
+            try:
+                datetime.strptime(date_str, "%Y-%m-%d")
+                target_date = date_str
+            except ValueError:
+                raise JiraError(f"Invalid date format: {date_str}. Please use YYYY-MM-DD format.")
+        
+        # Find issues assigned to the current user on the target date
+        # This JQL looks for issues where the assignee changed to the current user on the target date
+        jql = f"assignee = currentUser() AND assignee CHANGED ON {target_date} ORDER BY updated DESC"
+        issues = jira.search_issues(jql)
+        
+        # Fetch worklog information for each issue
+        for issue in issues:
+            try:
+                # Add worklog data to each issue
+                issue.worklog_seconds = get_issue_worklog_time(issue.key)
+            except Exception as e:
+                logger.error(f"Error fetching worklog for {issue.key}: {str(e)}")
+                issue.worklog_seconds = 0
+                
+        return issues
+    except Exception as e:
+        raise JiraError(f"Failed to get issues assigned on {date_str or 'today'}: {str(e)}")
+
+
 def get_available_transitions(issue_key: str) -> List[str]:
     """
     Get available transitions for an issue.
