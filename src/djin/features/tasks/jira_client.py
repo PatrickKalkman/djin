@@ -504,26 +504,46 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
                 raise JiraError(f"Invalid date format: {date_str}. Please use YYYY-MM-DD format.")
         
         # Try multiple approaches to find worked-on issues
+        all_issues = []
         
         # 1. First try with worklogDate (standard approach)
         jql = f"worklogDate = {target_date} AND worklogAuthor = currentUser() ORDER BY updated DESC"
-        issues = jira.search_issues(jql)
+        worklog_issues = jira.search_issues(jql)
+        all_issues.extend([issue.key for issue in worklog_issues])
         
-        # 2. If no results, try with updated date (might have worked on it without logging time)
-        if not issues:
-            logger.info(f"No worklog entries found for {target_date}, trying updated issues")
-            jql = f"assignee = currentUser() AND updated >= {target_date} AND updated <= {target_date} ORDER BY updated DESC"
+        # 2. Try with updated date (might have worked on it without logging time)
+        jql = f"assignee = currentUser() AND updated >= {target_date} AND updated <= {target_date} ORDER BY updated DESC"
+        updated_issues = jira.search_issues(jql)
+        all_issues.extend([issue.key for issue in updated_issues if issue.key not in all_issues])
+        
+        # 3. Try with status changes (e.g., moved to In Progress)
+        jql = f"assignee = currentUser() AND status = 'In Progress' ORDER BY updated DESC"
+        in_progress_issues = jira.search_issues(jql)
+        all_issues.extend([issue.key for issue in in_progress_issues if issue.key not in all_issues])
+        
+        # 4. Include issues that were resolved on this date
+        jql = f"assignee = currentUser() AND status CHANGED TO 'Done' DURING ({target_date}, {target_date}) ORDER BY updated DESC"
+        resolved_issues = jira.search_issues(jql)
+        all_issues.extend([issue.key for issue in resolved_issues if issue.key not in all_issues])
+        
+        # 5. Include issues that were assigned to you on this date
+        jql = f"assignee = currentUser() AND assignee CHANGED ON {target_date} ORDER BY updated DESC"
+        assigned_issues = jira.search_issues(jql)
+        all_issues.extend([issue.key for issue in assigned_issues if issue.key not in all_issues])
+        
+        # If we have any issues, fetch them all at once with full details
+        if all_issues:
+            # Remove duplicates while preserving order
+            unique_issues = []
+            for key in all_issues:
+                if key not in unique_issues:
+                    unique_issues.append(key)
+                    
+            # Fetch all issues at once
+            jql = f"key in ({','.join(unique_issues)}) ORDER BY updated DESC"
             issues = jira.search_issues(jql)
-        
-        # 3. If still no results, try with status changes (e.g., moved to In Progress)
-        if not issues:
-            logger.info(f"No updated issues found for {target_date}, trying status changes")
-            jql = f"assignee = currentUser() AND status = 'In Progress' ORDER BY updated DESC"
-            potential_issues = jira.search_issues(jql)
-            
-            # Filter to only include issues that were likely worked on that day
-            # (This is an approximation since Jira doesn't directly track status change dates in JQL)
-            issues = potential_issues
+        else:
+            issues = []
         
         # Fetch worklog information for each issue
         for issue in issues:

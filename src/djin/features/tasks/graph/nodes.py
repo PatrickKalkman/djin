@@ -152,7 +152,14 @@ def format_output_node(state):
                 console.print("  [cyan]• You didn't log any work for this date in Jira[/cyan]")
                 console.print("  [cyan]• You didn't transition any tasks to 'In Progress' on this date[/cyan]")
                 console.print("  [cyan]• You didn't update any assigned tasks on this date[/cyan]")
+                console.print("  [cyan]• You didn't resolve any tasks on this date[/cyan]")
                 return {"formatted_output": console.export_text()}
+            else:
+                console.print("[cyan]Showing tasks that you:[/cyan]")
+                console.print("  [green]• Logged time on[/green]")
+                console.print("  [green]• Updated or worked on[/green]")
+                console.print("  [green]• Were assigned today[/green]")
+                console.print("  [green]• Resolved today[/green]")
         elif state.request_type == "completed":
             title = f"My Completed Tasks (Last {state.days} Days)"
 
