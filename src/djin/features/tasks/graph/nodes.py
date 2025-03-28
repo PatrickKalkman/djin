@@ -20,8 +20,8 @@ def fetch_tasks_node(state):
             status_filter = "status = 'In Progress'"
             raw_tasks = get_my_issues(status_filter=status_filter)
         elif state.request_type == "active":
-            # Active tasks are only In Progress tasks (not To Do or Done)
-            status_filter = "status = 'In Progress'"
+            # Active tasks include In Progress and Waiting for customer
+            status_filter = "status = 'In Progress' OR status = 'Waiting for customer'"
             raw_tasks = get_my_issues(status_filter=status_filter)
         elif state.request_type == "completed":
             days = getattr(state, "days", 7)
