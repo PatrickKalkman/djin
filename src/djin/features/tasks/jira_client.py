@@ -562,7 +562,7 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
             
             # Fetch all issues at once if there are any
             if unique_issues:
-                jql = f"key in ({','.join(unique_issues)}) ORDER BY updated DESC"
+                jql = f"key in ({','.join(unique_issues)}) AND status != 'To Do' ORDER BY updated DESC"
                 logger.info(f"Fetching full details with JQL: {jql}")
                 issues = jira.search_issues(jql)
                 logger.info(f"Successfully fetched {len(issues)} issues with full details")
