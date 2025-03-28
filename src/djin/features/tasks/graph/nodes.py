@@ -23,6 +23,11 @@ def fetch_tasks_node(state):
             # Active tasks include In Progress and Waiting for customer
             status_filter = "status = 'In Progress' OR status = 'Waiting for customer'"
             raw_tasks = get_my_issues(status_filter=status_filter)
+        elif state.request_type == "worked_on":
+            # Get tasks worked on for a specific date
+            from djin.features.tasks.jira_client import get_worked_on_issues
+            date_str = getattr(state, "date", None)
+            raw_tasks = get_worked_on_issues(date_str)
         elif state.request_type == "completed":
             days = getattr(state, "days", 7)
             raw_tasks = get_my_completed_issues(days=days)
@@ -136,6 +141,9 @@ def format_output_node(state):
             title = "My In Progress Tasks"
         elif state.request_type == "active":
             title = "My Active Tasks"
+        elif state.request_type == "worked_on":
+            date_display = state.date if state.date else "Today"
+            title = f"Tasks I Worked On ({date_display})"
         elif state.request_type == "completed":
             title = f"My Completed Tasks (Last {state.days} Days)"
 

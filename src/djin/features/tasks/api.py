@@ -42,6 +42,18 @@ class TaskAPI:
             str: Formatted output of active tasks
         """
         return self._agent.process_active_request()
+        
+    def get_worked_on_tasks(self, date_str: str = None) -> str:
+        """
+        Get tasks worked on for a specific date.
+        
+        Args:
+            date_str: Date string in YYYY-MM-DD format (default: today)
+            
+        Returns:
+            str: Formatted output of tasks worked on
+        """
+        return self._agent.process_worked_on_request(date_str)
 
     def get_completed_tasks(self, days: int = 7) -> str:
         """
