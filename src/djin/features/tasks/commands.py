@@ -93,32 +93,35 @@ def task_details_command(args):
 
 def set_task_status_command(args):
     """Transition a Jira issue to a new status."""
-    if len(args) < 2:
-        console.print("[red]Error: Please provide a Jira issue key and the target status (e.g., /tasks set-status PROJ-123 'In Progress')[/red]")
-        return False
-
-    issue_key = args[0]
-    # Join remaining args in case status has spaces (e.g., "In Progress")
-    status_name = " ".join(args[1:])
-
     try:
-        console.print(f"Attempting to transition [cyan]{issue_key}[/cyan] to status [yellow]'{status_name}'[/yellow]...")
-        success = transition_issue(issue_key, status_name)
-        if success:
-            console.print(f"[green]Successfully transitioned {issue_key} to '{status_name}'[/green]")
-            return True
-        else:
-            # This part might not be reached if transition_issue raises JiraError on failure
-            console.print(f"[red]Failed to transition {issue_key}. The transition might not be available.[/red]")
-            return False
-    except JiraError as e:
-        # Use handle_error for consistent error display
-        handle_error(e)
-        return False
+        # Use the API layer to get the tasks agent
+        from djin.features.tasks.api import get_tasks_api
+
+        # Get the tasks API
+        tasks_api = get_tasks_api()
+
+        # Check arguments
+        if len(args) < 2:
+            console.print("[red]Error: Please provide a Jira issue key and the target status (e.g., /tasks set-status PROJ-123 'In Progress')[/red]")
+            return False # Indicate command failure
+
+        issue_key = args[0]
+        # Join remaining args in case status has spaces (e.g., "In Progress")
+        status_name = " ".join(args[1:])
+
+        # Call the API method to set task status
+        result = tasks_api.set_task_status(issue_key, status_name)
+
+        # Print the result from the API/Agent
+        console.print(result)
+
+        # Determine success based on the result string (simple check)
+        return "[green]" in result
+
     except Exception as e:
-        # Catch unexpected errors
-        handle_error(JiraError(f"An unexpected error occurred: {str(e)}"))
-        return False
+        # Catch unexpected errors during API call or argument parsing
+        handle_error(JiraError(f"An unexpected error occurred in the command: {str(e)}"))
+        return False # Indicate command failure
 
 
 register_command(

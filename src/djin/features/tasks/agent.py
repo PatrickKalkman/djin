@@ -30,6 +30,40 @@ class TaskAgent:
         # Return the formatted output
         return final_state["formatted_output"]
 
+    def process_set_status_request(self, issue_key: str, status_name: str) -> str:
+        """Process a request to set the status of a specific task
+
+        Args:
+            issue_key: The Jira issue key (e.g., PROJ-123)
+            status_name: The target status name (e.g., "In Progress")
+
+        Returns:
+            str: A message indicating success or failure.
+        """
+        from rich.console import Console
+
+        from djin.common.errors import handle_error
+        from djin.features.tasks.jira_client import JiraError, transition_issue
+
+        console = Console()  # Create a console instance for potential rich output within the agent if needed
+
+        try:
+            console.print(f"Attempting to transition [cyan]{issue_key}[/cyan] to status [yellow]'{status_name}'[/yellow]...")
+            success = transition_issue(issue_key, status_name)
+            if success:
+                return f"[green]Successfully transitioned {issue_key} to '{status_name}'[/green]"
+            else:
+                # This might not be reached if transition_issue raises JiraError on failure
+                return f"[red]Failed to transition {issue_key}. The transition might not be available.[/red]"
+        except JiraError as e:
+            # Log the error using handle_error but return a user-friendly message
+            handle_error(e)  # Logs the error
+            return f"[red]Error transitioning {issue_key}: {str(e)}[/red]"
+        except Exception as e:
+            # Catch unexpected errors
+            handle_error(JiraError(f"An unexpected error occurred: {str(e)}")) # Logs the error
+            return f"[red]An unexpected error occurred while transitioning {issue_key}: {str(e)}[/red]"
+
     def process_completed_request(self, days: int = 7):
         """Process a request to show completed tasks
 

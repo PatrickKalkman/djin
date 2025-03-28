@@ -57,3 +57,16 @@ class TaskAPI:
             str: Formatted output of task details
         """
         return self._agent.process_task_details_request(issue_key)
+
+    def set_task_status(self, issue_key: str, status_name: str) -> str:
+        """
+        Set the status for a specific task.
+
+        Args:
+            issue_key: The Jira issue key (e.g., PROJ-123)
+            status_name: The target status name (e.g., "In Progress")
+
+        Returns:
+            str: A message indicating success or failure.
+        """
+        return self._agent.process_set_status_request(issue_key, status_name)
