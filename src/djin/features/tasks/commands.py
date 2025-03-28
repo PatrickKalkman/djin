@@ -59,7 +59,10 @@ def worked_on_command(args):
     try:
         # Use the API layer to get the tasks agent
         from djin.features.tasks.api import get_tasks_api
+        import logging
 
+        logger = logging.getLogger("djin.tasks")
+        
         # Get the tasks API
         tasks_api = get_tasks_api()
         
@@ -75,6 +78,11 @@ def worked_on_command(args):
                 console.print("[red]Invalid date format. Please use YYYY-MM-DD format.[/red]")
                 return False
 
+        # Log that we're fetching worked-on tasks
+        display_date = date_str or "today"
+        logger.info(f"Fetching tasks worked on for {display_date}")
+        console.print(f"[cyan]Searching for tasks worked on {display_date}...[/cyan]")
+        
         # Call the API method to get tasks worked on
         result = tasks_api.get_worked_on_tasks(date_str)
 

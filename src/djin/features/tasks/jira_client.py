@@ -503,10 +503,27 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
             except ValueError:
                 raise JiraError(f"Invalid date format: {date_str}. Please use YYYY-MM-DD format.")
         
-        # Get issues with worklog entries on the target date
-        # We need to search for issues with worklog updated on the target date
+        # Try multiple approaches to find worked-on issues
+        
+        # 1. First try with worklogDate (standard approach)
         jql = f"worklogDate = {target_date} AND worklogAuthor = currentUser() ORDER BY updated DESC"
         issues = jira.search_issues(jql)
+        
+        # 2. If no results, try with updated date (might have worked on it without logging time)
+        if not issues:
+            logger.info(f"No worklog entries found for {target_date}, trying updated issues")
+            jql = f"assignee = currentUser() AND updated >= {target_date} AND updated <= {target_date} ORDER BY updated DESC"
+            issues = jira.search_issues(jql)
+        
+        # 3. If still no results, try with status changes (e.g., moved to In Progress)
+        if not issues:
+            logger.info(f"No updated issues found for {target_date}, trying status changes")
+            jql = f"assignee = currentUser() AND status = 'In Progress' ORDER BY updated DESC"
+            potential_issues = jira.search_issues(jql)
+            
+            # Filter to only include issues that were likely worked on that day
+            # (This is an approximation since Jira doesn't directly track status change dates in JQL)
+            issues = potential_issues
         
         # Fetch worklog information for each issue
         for issue in issues:

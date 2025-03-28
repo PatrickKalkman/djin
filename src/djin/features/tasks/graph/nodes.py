@@ -144,6 +144,15 @@ def format_output_node(state):
         elif state.request_type == "worked_on":
             date_display = state.date if state.date else "Today"
             title = f"Tasks I Worked On ({date_display})"
+            
+            # If no tasks found, provide a more helpful message
+            if not state.processed_tasks:
+                console.print(f"[yellow]No tasks found that you worked on {date_display}.[/yellow]")
+                console.print("[yellow]This could be because:[/yellow]")
+                console.print("  [cyan]• You didn't log any work for this date in Jira[/cyan]")
+                console.print("  [cyan]• You didn't transition any tasks to 'In Progress' on this date[/cyan]")
+                console.print("  [cyan]• You didn't update any assigned tasks on this date[/cyan]")
+                return {"formatted_output": console.export_text()}
         elif state.request_type == "completed":
             title = f"My Completed Tasks (Last {state.days} Days)"
 
