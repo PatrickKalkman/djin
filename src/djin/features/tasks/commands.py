@@ -5,7 +5,9 @@ Command handlers for Jira task management.
 from rich.console import Console
 
 from djin.cli.commands import register_command
+from djin.common.errors import handle_error
 from djin.features.tasks.agent import TaskAgent
+from djin.features.tasks.jira_client import JiraError, transition_issue
 
 # Create console for rich output
 console = Console()
@@ -89,6 +91,36 @@ def task_details_command(args):
         return False
 
 
+def set_task_status_command(args):
+    """Transition a Jira issue to a new status."""
+    if len(args) < 2:
+        console.print("[red]Error: Please provide a Jira issue key and the target status (e.g., /tasks set-status PROJ-123 'In Progress')[/red]")
+        return False
+
+    issue_key = args[0]
+    # Join remaining args in case status has spaces (e.g., "In Progress")
+    status_name = " ".join(args[1:])
+
+    try:
+        console.print(f"Attempting to transition [cyan]{issue_key}[/cyan] to status [yellow]'{status_name}'[/yellow]...")
+        success = transition_issue(issue_key, status_name)
+        if success:
+            console.print(f"[green]Successfully transitioned {issue_key} to '{status_name}'[/green]")
+            return True
+        else:
+            # This part might not be reached if transition_issue raises JiraError on failure
+            console.print(f"[red]Failed to transition {issue_key}. The transition might not be available.[/red]")
+            return False
+    except JiraError as e:
+        # Use handle_error for consistent error display
+        handle_error(e)
+        return False
+    except Exception as e:
+        # Catch unexpected errors
+        handle_error(JiraError(f"An unexpected error occurred: {str(e)}"))
+        return False
+
+
 register_command(
     "tasks todo",
     todo_command,
@@ -105,4 +137,10 @@ register_command(
     "tasks",
     task_details_command,
     "Show details for a specific Jira issue (e.g., /tasks PROJ-123)",
+)
+
+register_command(
+    "tasks set-status",
+    set_task_status_command,
+    "Set the status of a Jira issue (e.g., /tasks set-status PROJ-123 'In Progress')",
 )
