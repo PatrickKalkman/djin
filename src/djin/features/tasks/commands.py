@@ -7,7 +7,7 @@ from rich.console import Console
 from djin.cli.commands import register_command
 from djin.common.errors import handle_error
 from djin.features.tasks.agent import TaskAgent
-from djin.features.tasks.jira_client import JiraError, transition_issue
+from djin.features.tasks.jira_client import JiraError
 
 # Create console for rich output
 console = Console()
@@ -102,8 +102,10 @@ def set_task_status_command(args):
 
         # Check arguments
         if len(args) < 2:
-            console.print("[red]Error: Please provide a Jira issue key and the target status (e.g., /tasks set-status PROJ-123 'In Progress')[/red]")
-            return False # Indicate command failure
+            console.print(
+                "[red]Error: Please provide a Jira issue key and the target status (e.g., /tasks set-status PROJ-123 'In Progress')[/red]"
+            )
+            return False  # Indicate command failure
 
         issue_key = args[0]
         # Join remaining args in case status has spaces (e.g., "In Progress")
@@ -121,7 +123,7 @@ def set_task_status_command(args):
     except Exception as e:
         # Catch unexpected errors during API call or argument parsing
         handle_error(JiraError(f"An unexpected error occurred in the command: {str(e)}"))
-        return False # Indicate command failure
+        return False  # Indicate command failure
 
 
 register_command(
