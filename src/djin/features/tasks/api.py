@@ -33,26 +33,26 @@ class TaskAPI:
             str: Formatted output of todo tasks
         """
         return self._agent.process_todo_request()
-        
+
     def get_completed_tasks(self, days: int = 7) -> str:
         """
         Get completed tasks for the current user.
-        
+
         Args:
             days: Number of days to look back (default: 7)
-            
+
         Returns:
             str: Formatted output of completed tasks
         """
         return self._agent.process_completed_request(days)
-        
+
     def get_task_details(self, issue_key: str) -> str:
         """
         Get details for a specific task.
-        
+
         Args:
             issue_key: The Jira issue key (e.g., PROJ-123)
-            
+
         Returns:
             str: Formatted output of task details
         """

@@ -29,10 +29,10 @@ class TaskAgent:
 
         # Return the formatted output
         return final_state["formatted_output"]
-        
+
     def process_completed_request(self, days: int = 7):
         """Process a request to show completed tasks
-        
+
         Args:
             days: Number of days to look back (default: 7)
         """
@@ -51,10 +51,10 @@ class TaskAgent:
 
         # Return the formatted output
         return final_state["formatted_output"]
-        
+
     def process_task_details_request(self, issue_key: str):
         """Process a request to show details for a specific task
-        
+
         Args:
             issue_key: The Jira issue key (e.g., PROJ-123)
         """
