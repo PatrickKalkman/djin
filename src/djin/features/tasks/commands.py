@@ -114,9 +114,7 @@ def set_task_status_command(args):
         # Call the API method to set task status
         result = tasks_api.set_task_status(issue_key, status_name)
 
-        # Print the result
-        console.print(result)
-
+        # The result is already printed by the agent, no need to print it again
         # Determine success based on the result string (simple check)
         return "[green]" in result
 

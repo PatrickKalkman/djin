@@ -72,8 +72,8 @@ def process_tasks_node(state):
     # But this node allows for more complex processing in the future
     processed_tasks = []
     
-    # Handle task_details differently since it's already a dictionary
-    if state.request_type == "task_details" and state.raw_tasks:
+    # Handle task_details and set_status differently since they're already dictionaries
+    if (state.request_type == "task_details" or state.request_type == "set_status") and state.raw_tasks:
         # The task details are already processed by get_issue_details
         processed_tasks = state.raw_tasks
     else:
