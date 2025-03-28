@@ -55,17 +55,6 @@ class TaskAPI:
         """
         return self._agent.process_worked_on_request(date_str)
         
-    def get_assigned_today_tasks(self, date_str: str = None) -> str:
-        """
-        Get tasks assigned to the user on a specific date.
-        
-        Args:
-            date_str: Date string in YYYY-MM-DD format (default: today)
-            
-        Returns:
-            str: Formatted output of tasks assigned on the specified date
-        """
-        return self._agent.process_assigned_today_request(date_str)
 
     def get_completed_tasks(self, days: int = 7) -> str:
         """

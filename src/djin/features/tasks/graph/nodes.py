@@ -28,11 +28,6 @@ def fetch_tasks_node(state):
             from djin.features.tasks.jira_client import get_worked_on_issues
             date_str = getattr(state, "date", None)
             raw_tasks = get_worked_on_issues(date_str)
-        elif state.request_type == "assigned_today":
-            # Get tasks assigned to the user on a specific date
-            from djin.features.tasks.jira_client import get_assigned_today_issues
-            date_str = getattr(state, "date", None)
-            raw_tasks = get_assigned_today_issues(date_str)
         elif state.request_type == "completed":
             days = getattr(state, "days", 7)
             raw_tasks = get_my_completed_issues(days=days)
@@ -157,14 +152,6 @@ def format_output_node(state):
                 console.print("  [cyan]• You didn't log any work for this date in Jira[/cyan]")
                 console.print("  [cyan]• You didn't transition any tasks to 'In Progress' on this date[/cyan]")
                 console.print("  [cyan]• You didn't update any assigned tasks on this date[/cyan]")
-                return {"formatted_output": console.export_text()}
-        elif state.request_type == "assigned_today":
-            date_display = state.date if state.date else "Today"
-            title = f"Tasks Assigned To Me ({date_display})"
-            
-            # If no tasks found, provide a more helpful message
-            if not state.processed_tasks:
-                console.print(f"[yellow]No tasks found that were assigned to you on {date_display}.[/yellow]")
                 return {"formatted_output": console.export_text()}
         elif state.request_type == "completed":
             title = f"My Completed Tasks (Last {state.days} Days)"
