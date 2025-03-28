@@ -62,6 +62,8 @@ def worked_on_command(args):
         import logging
 
         logger = logging.getLogger("djin.tasks")
+        # Increase logging level temporarily to see more details
+        logger.setLevel(logging.INFO)
         
         # Get the tasks API
         tasks_api = get_tasks_api()
@@ -80,11 +82,14 @@ def worked_on_command(args):
 
         # Log that we're fetching worked-on tasks
         display_date = date_str or "today"
-        logger.info(f"Fetching tasks worked on for {display_date}")
+        logger.info(f"Command: Fetching tasks worked on for {display_date}")
         console.print(f"[cyan]Searching for tasks worked on {display_date}...[/cyan]")
         
         # Call the API method to get tasks worked on
         result = tasks_api.get_worked_on_tasks(date_str)
+        
+        # Reset logging level
+        logger.setLevel(logging.WARNING)
 
         # Return the result
         return result

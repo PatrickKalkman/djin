@@ -153,6 +153,38 @@ def format_output_node(state):
                 console.print("  [cyan]• You didn't transition any tasks to 'In Progress' on this date[/cyan]")
                 console.print("  [cyan]• You didn't update any assigned tasks on this date[/cyan]")
                 console.print("  [cyan]• You didn't resolve any tasks on this date[/cyan]")
+                console.print("")
+                console.print("[yellow]As a fallback, here are your current In Progress tasks:[/yellow]")
+                
+                # Get current in-progress tasks as a fallback
+                from djin.features.tasks.jira_client import get_my_issues
+                status_filter = "status = 'In Progress'"
+                in_progress_tasks = get_my_issues(status_filter=status_filter)
+                
+                # Process these tasks
+                fallback_tasks = []
+                for issue in in_progress_tasks:
+                    fallback_tasks.append(
+                        {
+                            "key": issue.key,
+                            "summary": issue.fields.summary,
+                            "status": issue.fields.status.name,
+                            "type": issue.fields.issuetype.name,
+                            "priority": getattr(issue.fields.priority, "name", "Unknown"),
+                            "assignee": getattr(issue.fields.assignee, "displayName", "Unassigned")
+                            if hasattr(issue.fields, "assignee")
+                            else "Unassigned",
+                            "worklog_seconds": getattr(issue, "worklog_seconds", 0),
+                        }
+                    )
+                
+                # Display these tasks
+                if fallback_tasks:
+                    fallback_table = format_tasks_table(fallback_tasks, title="Current In Progress Tasks")
+                    console.print(fallback_table)
+                else:
+                    console.print("[yellow]You don't have any tasks in progress currently.[/yellow]")
+                
                 return {"formatted_output": console.export_text()}
             else:
                 console.print("[cyan]Showing tasks that you:[/cyan]")
