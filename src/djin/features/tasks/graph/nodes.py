@@ -30,6 +30,33 @@ def fetch_tasks_node(state):
                 return {"errors": state.errors + ["No issue key provided"]}
             task_details = get_issue_details(issue_key)
             raw_tasks = [task_details]  # Wrap in list to maintain consistent structure
+        elif state.request_type == "set_status":
+            # For set_status, we need to transition the issue
+            from djin.features.tasks.jira_client import get_issue_details, transition_issue
+            issue_key = getattr(state, "issue_key", "")
+            status_name = getattr(state, "status_name", "")
+            
+            if not issue_key:
+                return {"errors": state.errors + ["No issue key provided"]}
+            if not status_name:
+                return {"errors": state.errors + ["No status name provided"]}
+                
+            # First get the current details to show in the result
+            task_details = get_issue_details(issue_key)
+            
+            # Then attempt the transition
+            try:
+                transition_issue(issue_key, status_name)
+                # Mark as successful in the task details
+                task_details["transition_success"] = True
+                task_details["old_status"] = task_details["status"]
+                task_details["new_status"] = status_name
+            except Exception as e:
+                # Mark as failed in the task details
+                task_details["transition_success"] = False
+                task_details["transition_error"] = str(e)
+                
+            raw_tasks = [task_details]  # Wrap in list to maintain consistent structure
         else:
             raw_tasks = get_my_issues()
 
@@ -83,6 +110,17 @@ def format_output_node(state):
             # Format the single task details
             task_details = format_task_details(state.processed_tasks[0])
             console.print(task_details)
+        else:
+            console.print(f"[red]No details found for issue {state.issue_key}[/red]")
+    elif state.request_type == "set_status":
+        # Handle set_status request
+        if state.processed_tasks:
+            task = state.processed_tasks[0]
+            if task.get("transition_success", False):
+                console.print(f"[green]Successfully transitioned {task['key']} from '{task['old_status']}' to '{task['new_status']}'[/green]")
+            else:
+                error_msg = task.get("transition_error", "Unknown error")
+                console.print(f"[red]Error transitioning {task['key']}: {error_msg}[/red]")
         else:
             console.print(f"[red]No details found for issue {state.issue_key}[/red]")
     else:
