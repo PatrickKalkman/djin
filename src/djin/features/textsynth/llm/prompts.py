@@ -22,6 +22,7 @@ Your summary should:
 5. Be written in a clear, professional, first-person style
 6. Use past tense as if reporting on work that was done
 7. Do NOT include commentary about improvements, benefits, or the quality of the work
+8. IMPORTANT: If the titles contain ticket IDs (like SB-1234), include ALL ticket IDs in parentheses in your summary
 
 Summary:
 """
