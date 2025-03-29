@@ -7,7 +7,6 @@ Entry point for the application
 import logging
 import os
 
-import djin.cli.commands  # Import to ensure commands module is loaded
 from dotenv import load_dotenv
 from rich.console import Console
 
@@ -32,37 +31,43 @@ def initialize_features():
     try:
         # Import commands module first to ensure it's initialized
         import djin.cli.commands
+
         logger.info("Initialized command system")
-        
+
         # Import task commands
         import djin.features.tasks.commands
+
         logger.info("Loaded tasks commands")
-        
+
         # Import report and text synthesis commands
         import djin.features.textsynth.commands
+
         logger.info("Loaded textsynth commands")
-        
+
         # Import orchestrator commands
         import djin.features.orchestrator.commands
+
         logger.info("Loaded orchestrator commands")
-        
+
         # Import notes commands if available
         try:
             import djin.features.notes.commands
+
             logger.info("Loaded notes commands")
         except ImportError:
             logger.debug("Notes feature not available")
-        
+
         # Log successful initialization
         logger.info("Features initialized successfully")
         logger.info(f"Registered commands: {list(djin.cli.commands.commands.keys())}")
-        
+
         # Debug: Print all registered commands
         for cmd_name in sorted(djin.cli.commands.commands.keys()):
             logger.info(f"Command registered: /{cmd_name}")
-            
+
         # Force a debug print of all commands
         from djin.cli.commands import debug_commands
+
         debug_commands([])
     except Exception as e:
         logger.error(f"Error initializing features: {str(e)}")
