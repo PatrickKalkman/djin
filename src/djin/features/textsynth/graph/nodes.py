@@ -13,7 +13,7 @@ from djin.features.textsynth.llm.client import ReportLLMClient
 logger = logging.getLogger("djin.textsynth.graph")
 
 
-def prepare_titles_node(state: Dict[str, Any]) -> Dict[str, Any]:
+def prepare_titles_node(state):
     """
     Prepare titles for summarization.
 
@@ -27,20 +27,19 @@ def prepare_titles_node(state: Dict[str, Any]) -> Dict[str, Any]:
         # Format titles for processing
         titles = state.titles
         if not titles:
-            state = state.copy(update={"error": "No titles provided for summarization"})
-            return state
+            return state.model_copy(update={"error": "No titles provided for summarization"})
 
         # Log the titles being processed
         logger.info(f"Processing {len(titles)} titles for summarization")
 
         return state
     except Exception as e:
-        state = state.copy(update={"error": f"Error preparing titles: {str(e)}"})
-        logger.error(state["error"])
-        return state
+        error_msg = f"Error preparing titles: {str(e)}"
+        logger.error(error_msg)
+        return state.model_copy(update={"error": error_msg})
 
 
-def summarize_titles_node(state: Dict[str, Any]) -> Dict[str, Any]:
+def summarize_titles_node(state):
     """
     Summarize titles using LLM.
 
@@ -56,7 +55,7 @@ def summarize_titles_node(state: Dict[str, Any]) -> Dict[str, Any]:
             return state
 
         # Get titles from state
-        titles = state.get("titles", [])
+        titles = state.titles
 
         # Create LLM client
         llm_client = ReportLLMClient()
@@ -65,10 +64,8 @@ def summarize_titles_node(state: Dict[str, Any]) -> Dict[str, Any]:
         summary = llm_client.summarize_titles(titles)
 
         # Update state with summary
-        state = state.copy(update={"summary": summary})
-
-        return state
+        return state.model_copy(update={"summary": summary})
     except Exception as e:
-        state = state.copy(update={"error": f"Error summarizing titles: {str(e)}"})
-        logger.error(state["error"])
-        return state
+        error_msg = f"Error summarizing titles: {str(e)}"
+        logger.error(error_msg)
+        return state.model_copy(update={"error": error_msg})
