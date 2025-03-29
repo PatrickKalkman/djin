@@ -4,6 +4,7 @@ Command routing system for Djin.
 
 from rich.console import Console
 from rich.table import Table
+import inspect
 
 # Create console for rich output
 console = Console()
@@ -72,6 +73,21 @@ def exit_command(args):
 def debug_commands(args):
     """Show all registered commands (debug)."""
     console.print(f"[bold]Registered commands:[/bold] {list(commands.keys())}")
+    
+    # Show detailed command information
+    table = Table(title="Command Details")
+    table.add_column("Command", style="cyan")
+    table.add_column("Help Text")
+    table.add_column("Function")
+    
+    for cmd_name, cmd_info in sorted(commands.items()):
+        table.add_row(
+            f"/{cmd_name}", 
+            cmd_info["help"],
+            f"{cmd_info['func'].__module__}.{cmd_info['func'].__name__}"
+        )
+    
+    console.print(table)
     return True
 
 

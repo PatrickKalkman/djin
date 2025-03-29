@@ -32,22 +32,30 @@ def initialize_features():
     try:
         # Import task commands
         from djin.features.tasks import commands as tasks_commands
+        logger.info("Loaded tasks commands")
         
         # Import report and text synthesis commands
         from djin.features.textsynth import commands as textsynth_commands
+        logger.info("Loaded textsynth commands")
         
         # Import orchestrator commands
         from djin.features.orchestrator import commands as orchestrator_commands
+        logger.info("Loaded orchestrator commands")
         
         # Import notes commands if available
         try:
             from djin.features.notes import commands as notes_commands
+            logger.info("Loaded notes commands")
         except ImportError:
             logger.debug("Notes feature not available")
         
         # Log successful initialization
         logger.info("Features initialized successfully")
-        logger.debug(f"Registered commands: {list(djin.cli.commands.commands.keys())}")
+        logger.info(f"Registered commands: {list(djin.cli.commands.commands.keys())}")
+        
+        # Debug: Print all registered commands
+        for cmd_name in sorted(djin.cli.commands.commands.keys()):
+            logger.debug(f"Command registered: /{cmd_name}")
     except Exception as e:
         logger.error(f"Error initializing features: {str(e)}")
         console.print(f"[red]Error initializing features: {str(e)}[/red]")
