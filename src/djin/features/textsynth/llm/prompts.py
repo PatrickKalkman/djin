@@ -16,11 +16,12 @@ Jira Issue Titles:
 
 Your summary should:
 1. Begin with phrases like "Worked on" or "Made progress on"
-2. Be concise (1-3 sentences)
+2. Be concise (1 sentence only)
 3. Describe the work in an action-oriented way
-4. Focus on the practical impact of the work
+4. Focus only on what was done, not on the impact or benefits
 5. Be written in a clear, professional, first-person style
 6. Use past tense as if reporting on work that was done
+7. Do NOT include commentary about improvements, benefits, or the quality of the work
 
 Summary:
 """
