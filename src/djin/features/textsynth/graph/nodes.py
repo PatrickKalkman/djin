@@ -27,7 +27,7 @@ def prepare_titles_node(state: Dict[str, Any]) -> Dict[str, Any]:
         # Format titles for processing
         titles = state.get("titles", [])
         if not titles:
-            state["error"] = "No titles provided for summarization"
+            state = state.copy(update={"error": "No titles provided for summarization"})
             return state
 
         # Log the titles being processed
@@ -35,7 +35,7 @@ def prepare_titles_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
         return state
     except Exception as e:
-        state["error"] = f"Error preparing titles: {str(e)}"
+        state = state.copy(update={"error": f"Error preparing titles: {str(e)}"})
         logger.error(state["error"])
         return state
 
@@ -65,10 +65,10 @@ def summarize_titles_node(state: Dict[str, Any]) -> Dict[str, Any]:
         summary = llm_client.summarize_titles(titles)
 
         # Update state with summary
-        state["summary"] = summary
+        state = state.copy(update={"summary": summary})
 
         return state
     except Exception as e:
-        state["error"] = f"Error summarizing titles: {str(e)}"
+        state = state.copy(update={"error": f"Error summarizing titles: {str(e)}"})
         logger.error(state["error"])
         return state
