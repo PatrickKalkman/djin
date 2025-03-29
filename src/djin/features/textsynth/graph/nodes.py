@@ -25,7 +25,7 @@ def prepare_titles_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     try:
         # Format titles for processing
-        titles = state.get("titles", [])
+        titles = state.titles
         if not titles:
             state = state.copy(update={"error": "No titles provided for summarization"})
             return state
@@ -52,7 +52,7 @@ def summarize_titles_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     try:
         # Check for errors from previous nodes
-        if state.get("error"):
+        if state.error:
             return state
 
         # Get titles from state
