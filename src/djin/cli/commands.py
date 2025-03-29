@@ -2,9 +2,13 @@
 Command routing system for Djin.
 """
 
+import logging
+import inspect
 from rich.console import Console
 from rich.table import Table
-import inspect
+
+# Set up logging
+logger = logging.getLogger("djin.cli.commands")
 
 # Create console for rich output
 console = Console()
@@ -12,10 +16,13 @@ console = Console()
 # Command registry
 commands = {}
 
+logger.info("Initializing command registry")
+
 
 def register_command(name, func, help_text):
     """Register a command with the command system."""
     commands[name] = {"func": func, "help": help_text}
+    logger.info(f"Registered command: {name} -> {func.__module__}.{func.__name__}")
 
 
 def route_command(cmd_name, args):

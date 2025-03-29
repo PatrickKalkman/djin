@@ -30,6 +30,10 @@ def initialize_features():
     """Initialize all features."""
     # Import feature commands to register them
     try:
+        # Import commands module first to ensure it's initialized
+        import djin.cli.commands
+        logger.info("Initialized command system")
+        
         # Import task commands
         import djin.features.tasks.commands
         logger.info("Loaded tasks commands")
@@ -55,7 +59,11 @@ def initialize_features():
         
         # Debug: Print all registered commands
         for cmd_name in sorted(djin.cli.commands.commands.keys()):
-            logger.debug(f"Command registered: /{cmd_name}")
+            logger.info(f"Command registered: /{cmd_name}")
+            
+        # Force a debug print of all commands
+        from djin.cli.commands import debug_commands
+        debug_commands([])
     except Exception as e:
         logger.error(f"Error initializing features: {str(e)}")
         console.print(f"[red]Error initializing features: {str(e)}[/red]")
