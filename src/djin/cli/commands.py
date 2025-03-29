@@ -48,7 +48,16 @@ def show_all_commands():
     table.add_column("Command", style="cyan")
     table.add_column("Description")
 
-    for cmd_name, cmd_info in sorted(commands.items()):
+    # Log the commands that will be displayed
+    logger.debug(f"Commands to display: {list(commands.keys())}")
+    
+    # Filter out subcommands for the main help display
+    main_commands = {}
+    for cmd_name, cmd_info in commands.items():
+        if " " not in cmd_name:  # Only show top-level commands
+            main_commands[cmd_name] = cmd_info
+    
+    for cmd_name, cmd_info in sorted(main_commands.items()):
         table.add_row(f"/{cmd_name}", cmd_info["help"])
 
     console.print(table)

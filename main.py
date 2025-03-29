@@ -40,7 +40,7 @@ def initialize_features():
         # Import notes commands first to ensure database is initialized
         try:
             import djin.features.notes.commands
-            logger.info("Loaded notes commands")
+            logger.info(f"Loaded notes commands: {list(filter(lambda x: x.startswith('note'), djin.cli.commands.commands.keys()))}")
         except Exception as e:
             logger.error(f"Error loading notes commands: {str(e)}")
             console.print(f"[red]Error loading notes commands: {str(e)}[/red]")
@@ -68,16 +68,11 @@ def initialize_features():
 
         # Log successful initialization
         logger.info("Features initialized successfully")
-        logger.info(f"Registered commands: {list(djin.cli.commands.commands.keys())}")
-
-        # Debug: Print all registered commands
-        for cmd_name in sorted(djin.cli.commands.commands.keys()):
-            logger.info(f"Command registered: /{cmd_name}")
-
-        # Force a debug print of all commands
-        from djin.cli.commands import debug_commands
-
-        debug_commands([])
+        logger.info(f"Total registered commands: {len(djin.cli.commands.commands)}")
+        
+        # Print all registered commands for debugging
+        all_commands = list(djin.cli.commands.commands.keys())
+        logger.info(f"All registered commands: {all_commands}")
     except Exception as e:
         logger.error(f"Error initializing features: {str(e)}")
         console.print(f"[red]Error initializing features: {str(e)}[/red]")

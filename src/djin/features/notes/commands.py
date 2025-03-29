@@ -234,5 +234,5 @@ register_command("note view", view_note_command, "View a specific note by ID")
 register_command("note delete", delete_note_command, "Delete a note by ID")
 register_command("note debug", debug_notes_db_command, "Debug the notes database")
 
-logger.info("Notes commands registered")
-console.print("[green]Notes feature initialized[/green]")
+# Log registration status
+logger.info(f"Notes commands registered: {['note', 'note add', 'note list', 'note view', 'note delete', 'note debug']}")
