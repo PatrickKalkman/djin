@@ -4,7 +4,7 @@ Public API for the report agent.
 This module provides a public interface for other agents to call the report agent.
 """
 
-from djin.features.reports.agent import ReportAgent
+from djin.features.textsynth.agent import ReportAgent
 
 
 class ReportAPI:

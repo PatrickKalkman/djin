@@ -6,7 +6,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from djin.cli.commands import register_command
-from djin.features.reports.agent import ReportAgent
+from djin.features.textsynth.agent import ReportAgent
 
 # Create console for rich output
 console = Console()

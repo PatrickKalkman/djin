@@ -51,8 +51,9 @@ def process_command(command):
 
     # Use the command router from commands.py
     from djin.cli.commands import route_command
+
     result = route_command(cmd_name, args)
-    
+
     # Handle exit command
     if result == "EXIT":
         console.print("Goodbye! 👋")
@@ -69,6 +70,7 @@ def show_help():
     """Show available commands."""
     # Use the help command from commands.py
     from djin.cli.commands import help_command
+
     help_command([])
 
 
@@ -88,10 +90,6 @@ def main_loop():
     session = PromptSession(history=FileHistory(str(history_dir / "history")), style=style)
 
     # Import all feature modules to ensure commands are registered
-    import djin.features.tasks.commands
-    import djin.features.notes
-    import djin.features.time
-    import djin.features.moneymonk
 
     # Display welcome message
     display_welcome()

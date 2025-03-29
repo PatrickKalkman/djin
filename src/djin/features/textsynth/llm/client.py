@@ -8,7 +8,7 @@ import logging
 from typing import Any, Dict, List
 
 from djin.common.errors import DjinError
-from djin.features.reports.llm.prompts import CUSTOM_REPORT_PROMPT, DAILY_REPORT_PROMPT, WEEKLY_REPORT_PROMPT
+from djin.features.textsynth.llm.prompts import CUSTOM_REPORT_PROMPT, DAILY_REPORT_PROMPT, WEEKLY_REPORT_PROMPT
 
 # Set up logging
 logger = logging.getLogger("djin.reports.llm")

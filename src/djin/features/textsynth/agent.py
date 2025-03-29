@@ -8,8 +8,8 @@ import logging
 from datetime import datetime, timedelta
 
 from djin.common.errors import DjinError
-from djin.features.reports.llm.client import ReportLLMClient
 from djin.features.tasks.api import TaskAPI
+from djin.features.textsynth.llm.client import ReportLLMClient
 
 # Set up logging
 logger = logging.getLogger("djin.reports")

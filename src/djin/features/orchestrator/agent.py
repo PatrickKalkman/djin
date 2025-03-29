@@ -8,8 +8,8 @@ import logging
 from typing import Any, Dict
 
 from djin.common.errors import DjinError
-from djin.features.reports.api import ReportAPI
 from djin.features.tasks.api import TaskAPI
+from djin.features.textsynth.api import ReportAPI
 
 # Set up logging
 logger = logging.getLogger("djin.orchestrator")

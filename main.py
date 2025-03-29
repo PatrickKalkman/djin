@@ -5,6 +5,7 @@ Entry point for the application
 """
 
 import logging
+
 from rich.console import Console
 
 from djin.cli.app import main_loop
@@ -23,11 +24,9 @@ def initialize_features():
     # Import feature commands to register them
     try:
         # Import task commands
-        from djin.features.tasks import commands as task_commands
-        
+
         # Import report commands
-        from djin.features.reports import commands as report_commands
-        
+
         # Log successful initialization
         logger.info("Features initialized successfully")
     except Exception as e:
@@ -39,10 +38,10 @@ def main():
     """Main entry point for the application."""
     # Ensure config directory exists
     ensure_config_dir()
-    
+
     # Initialize features
     initialize_features()
-    
+
     # Start the main application loop
     main_loop()
 
