@@ -52,13 +52,10 @@ def initialize_features():
 
         logger.info("Loaded orchestrator commands")
 
-        # Import notes commands if available
-        try:
-            import djin.features.notes.commands
+        # Import notes commands
+        import djin.features.notes.commands
 
-            logger.info("Loaded notes commands")
-        except ImportError:
-            logger.debug("Notes feature not available")
+        logger.info("Loaded notes commands")
 
         # Log successful initialization
         logger.info("Features initialized successfully")
