@@ -37,25 +37,34 @@ def initialize_features():
 
         logger.info("Initialized command system")
 
-        # Import task commands
-        import djin.features.tasks.commands
+        # Import notes commands first to ensure database is initialized
+        try:
+            import djin.features.notes.commands
+            logger.info("Loaded notes commands")
+        except Exception as e:
+            logger.error(f"Error loading notes commands: {str(e)}")
+            console.print(f"[red]Error loading notes commands: {str(e)}[/red]")
 
-        logger.info("Loaded tasks commands")
+        # Import task commands
+        try:
+            import djin.features.tasks.commands
+            logger.info("Loaded tasks commands")
+        except Exception as e:
+            logger.error(f"Error loading tasks commands: {str(e)}")
 
         # Import report and text synthesis commands
-        import djin.features.textsynth.commands
-
-        logger.info("Loaded textsynth commands")
+        try:
+            import djin.features.textsynth.commands
+            logger.info("Loaded textsynth commands")
+        except Exception as e:
+            logger.error(f"Error loading textsynth commands: {str(e)}")
 
         # Import orchestrator commands
-        import djin.features.orchestrator.commands
-
-        logger.info("Loaded orchestrator commands")
-
-        # Import notes commands
-        import djin.features.notes.commands
-
-        logger.info("Loaded notes commands")
+        try:
+            import djin.features.orchestrator.commands
+            logger.info("Loaded orchestrator commands")
+        except Exception as e:
+            logger.error(f"Error loading orchestrator commands: {str(e)}")
 
         # Log successful initialization
         logger.info("Features initialized successfully")

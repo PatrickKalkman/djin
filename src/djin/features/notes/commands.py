@@ -10,7 +10,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from djin.cli.commands import register_command
-from djin.features.notes.db.schema import get_connection
+from djin.features.notes.db.schema import get_connection, init_database
 
 # Set up logging
 logger = logging.getLogger("djin.notes.commands")
@@ -121,6 +121,50 @@ def view_note_command(args: List[str]) -> bool:
         return False
 
 
+def debug_notes_db_command(args: List[str]) -> bool:
+    """Debug the notes database."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # Check if the notes table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='notes'")
+        tables = cursor.fetchall()
+        
+        if not tables:
+            console.print("[red]Notes table does not exist![/red]")
+            console.print("Attempting to initialize database...")
+            init_database()
+            console.print("[green]Database initialized[/green]")
+        else:
+            console.print("[green]Notes table exists[/green]")
+            
+        # Get table schema
+        cursor.execute("PRAGMA table_info(notes)")
+        schema = cursor.fetchall()
+        
+        table = Table(title="Notes Table Schema")
+        table.add_column("Column", style="cyan")
+        table.add_column("Type", style="green")
+        table.add_column("NotNull", style="magenta")
+        table.add_column("Default", style="yellow")
+        
+        for col in schema:
+            table.add_row(
+                col[1],  # name
+                col[2],  # type
+                str(col[3]),  # notnull
+                str(col[4])   # default
+            )
+            
+        console.print(table)
+        return True
+    except Exception as e:
+        logger.error(f"Error debugging notes database: {str(e)}")
+        console.print(f"[red]Error debugging notes database: {str(e)}[/red]")
+        return False
+
+
 def delete_note_command(args: List[str]) -> bool:
     """Delete a note by ID."""
     if not args:
@@ -174,11 +218,21 @@ def note_command(args: List[str]) -> bool:
         return False
 
 
+# Initialize the database
+try:
+    init_database()
+    logger.info("Notes database initialized")
+except Exception as e:
+    logger.error(f"Failed to initialize notes database: {str(e)}")
+    console.print(f"[red]Failed to initialize notes database: {str(e)}[/red]")
+
 # Register commands
 register_command("note", note_command, "Manage notes (add, list, view, delete)")
 register_command("note add", add_note_command, "Add a new note")
 register_command("note list", list_notes_command, "List all notes")
 register_command("note view", view_note_command, "View a specific note by ID")
 register_command("note delete", delete_note_command, "Delete a note by ID")
+register_command("note debug", debug_notes_db_command, "Debug the notes database")
 
 logger.info("Notes commands registered")
+console.print("[green]Notes feature initialized[/green]")
