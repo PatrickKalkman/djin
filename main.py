@@ -20,8 +20,11 @@ load_dotenv()
 console = Console()
 
 # Set up logging
-logging_level = os.environ.get("LOGGING_LEVEL", "INFO")
-logging.basicConfig(level=getattr(logging, logging_level))
+logging_level = os.environ.get("LOGGING_LEVEL", "DEBUG")
+logging.basicConfig(
+    level=getattr(logging, logging_level),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger("djin")
 
 
