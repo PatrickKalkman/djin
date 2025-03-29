@@ -69,6 +69,13 @@ def exit_command(args):
     return "EXIT"
 
 
+def debug_commands(args):
+    """Show all registered commands (debug)."""
+    console.print(f"[bold]Registered commands:[/bold] {list(commands.keys())}")
+    return True
+
+
 # Register basic commands
 register_command("help", help_command, "Show help for commands")
 register_command("quit", exit_command, "Exit the application")
+register_command("debug", debug_commands, "Show all registered commands (debug)")
