@@ -6,7 +6,11 @@ and text synthesis.
 """
 
 import logging
+import os
 from typing import Any, Dict, List
+
+from langchain_core.prompts import PromptTemplate
+from langchain_groq import ChatGroq
 
 from djin.common.errors import DjinError
 from djin.features.textsynth.llm.prompts import (
@@ -23,7 +27,7 @@ logger = logging.getLogger("djin.reports.llm")
 class ReportLLMClient:
     """Client for interacting with LLMs for report operations and text synthesis."""
 
-    def __init__(self, model: str = "gpt-4"):
+    def __init__(self, model: str = "llama-3.3-70b-versatile"):
         """
         Initialize the report LLM client.
 
@@ -31,7 +35,16 @@ class ReportLLMClient:
             model: The LLM model to use
         """
         self.model = model
-        # TODO: Initialize the actual LLM client (e.g., OpenAI, Anthropic, etc.)
+        
+        # Initialize Groq client
+        api_key = os.environ.get("GROQ_API_KEY")
+        if not api_key:
+            logger.warning("GROQ_API_KEY not found in environment variables")
+            
+        self.llm = ChatGroq(
+            groq_api_key=api_key,
+            model_name=model
+        )
         
     def summarize_titles(self, titles: List[str]) -> str:
         """
@@ -53,13 +66,19 @@ class ReportLLMClient:
             titles_str = "\n".join([f"- {title}" for title in titles])
             
             # Prepare prompt
-            prompt = SUMMARIZE_TITLES_PROMPT.format(titles=titles_str)
+            prompt_template = PromptTemplate.from_template(SUMMARIZE_TITLES_PROMPT)
+            prompt = prompt_template.format(titles=titles_str)
             
-            # TODO: Implement actual LLM call with proper prompting
+            # Call Groq LLM
+            response = self.llm.invoke(prompt)
             
-            # Placeholder implementation
-            return f"Summary of {len(titles)} issues: These issues collectively focus on improving system functionality and user experience."
+            # Extract and return the summary
+            summary = response.content.strip()
+            logger.info(f"Generated summary: {summary}")
+            
+            return summary
         except Exception as e:
+            logger.error(f"Error in summarize_titles: {str(e)}")
             raise DjinError(f"Failed to summarize titles: {str(e)}")
 
     def generate_daily_report(
@@ -80,7 +99,6 @@ class ReportLLMClient:
             DjinError: If the report cannot be generated
         """
         try:
-            # TODO: Implement actual LLM call with proper prompting
             logger.info(f"Generating daily report for {date}")
 
             # Format tasks for the prompt
@@ -90,15 +108,23 @@ class ReportLLMClient:
             completed_tasks_str = "\n".join([f"- {task['key']}: {task['summary']}" for task in completed_tasks])
 
             # Prepare prompt
-            prompt = DAILY_REPORT_PROMPT.format(
+            prompt_template = PromptTemplate.from_template(DAILY_REPORT_PROMPT)
+            prompt = prompt_template.format(
                 date=date,
                 active_tasks=active_tasks_str,
                 completed_tasks=completed_tasks_str,
             )
 
-            # Placeholder implementation
-            return f"Daily Report for {date}\n\nActive Tasks:\n{active_tasks_str}\n\nCompleted Tasks:\n{completed_tasks_str}"
+            # Call Groq LLM
+            response = self.llm.invoke(prompt)
+            
+            # Extract and return the report
+            report = response.content.strip()
+            logger.info(f"Generated daily report for {date}")
+            
+            return report
         except Exception as e:
+            logger.error(f"Error in generate_daily_report: {str(e)}")
             raise DjinError(f"Failed to generate daily report: {str(e)}")
 
     def generate_weekly_report(
@@ -124,7 +150,6 @@ class ReportLLMClient:
             DjinError: If the report cannot be generated
         """
         try:
-            # TODO: Implement actual LLM call with proper prompting
             logger.info(f"Generating weekly report for {start_date} to {end_date}")
 
             # Format tasks for the prompt
@@ -134,16 +159,24 @@ class ReportLLMClient:
             completed_tasks_str = "\n".join([f"- {task['key']}: {task['summary']}" for task in completed_tasks])
 
             # Prepare prompt
-            prompt = WEEKLY_REPORT_PROMPT.format(
+            prompt_template = PromptTemplate.from_template(WEEKLY_REPORT_PROMPT)
+            prompt = prompt_template.format(
                 start_date=start_date,
                 end_date=end_date,
                 active_tasks=active_tasks_str,
                 completed_tasks=completed_tasks_str,
             )
 
-            # Placeholder implementation
-            return f"Weekly Report for {start_date} to {end_date}\n\nActive Tasks:\n{active_tasks_str}\n\nCompleted Tasks:\n{completed_tasks_str}"
+            # Call Groq LLM
+            response = self.llm.invoke(prompt)
+            
+            # Extract and return the report
+            report = response.content.strip()
+            logger.info(f"Generated weekly report for {start_date} to {end_date}")
+            
+            return report
         except Exception as e:
+            logger.error(f"Error in generate_weekly_report: {str(e)}")
             raise DjinError(f"Failed to generate weekly report: {str(e)}")
 
     def generate_custom_report(
@@ -171,7 +204,6 @@ class ReportLLMClient:
             DjinError: If the report cannot be generated
         """
         try:
-            # TODO: Implement actual LLM call with proper prompting
             logger.info(f"Generating custom report for {start_date} to {end_date} ({days} days)")
 
             # Format tasks for the prompt
@@ -181,7 +213,8 @@ class ReportLLMClient:
             completed_tasks_str = "\n".join([f"- {task['key']}: {task['summary']}" for task in completed_tasks])
 
             # Prepare prompt
-            prompt = CUSTOM_REPORT_PROMPT.format(
+            prompt_template = PromptTemplate.from_template(CUSTOM_REPORT_PROMPT)
+            prompt = prompt_template.format(
                 start_date=start_date,
                 end_date=end_date,
                 days=days,
@@ -189,7 +222,14 @@ class ReportLLMClient:
                 completed_tasks=completed_tasks_str,
             )
 
-            # Placeholder implementation
-            return f"Custom Report for {start_date} to {end_date} ({days} days)\n\nActive Tasks:\n{active_tasks_str}\n\nCompleted Tasks:\n{completed_tasks_str}"
+            # Call Groq LLM
+            response = self.llm.invoke(prompt)
+            
+            # Extract and return the report
+            report = response.content.strip()
+            logger.info(f"Generated custom report for {start_date} to {end_date} ({days} days)")
+            
+            return report
         except Exception as e:
+            logger.error(f"Error in generate_custom_report: {str(e)}")
             raise DjinError(f"Failed to generate custom report: {str(e)}")
