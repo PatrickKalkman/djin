@@ -5,9 +5,8 @@ This module provides nodes for text synthesis workflows.
 """
 
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
 
-from djin.common.errors import DjinError
 from djin.features.textsynth.llm.client import ReportLLMClient
 
 # Set up logging
@@ -33,7 +32,7 @@ def prepare_titles_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
         # Log the titles being processed
         logger.info(f"Processing {len(titles)} titles for summarization")
-        
+
         return state
     except Exception as e:
         state["error"] = f"Error preparing titles: {str(e)}"
@@ -58,16 +57,16 @@ def summarize_titles_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
         # Get titles from state
         titles = state.get("titles", [])
-        
+
         # Create LLM client
         llm_client = ReportLLMClient()
-        
+
         # Generate summary
         summary = llm_client.summarize_titles(titles)
-        
+
         # Update state with summary
         state["summary"] = summary
-        
+
         return state
     except Exception as e:
         state["error"] = f"Error summarizing titles: {str(e)}"
