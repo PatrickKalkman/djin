@@ -7,19 +7,20 @@ and text synthesis.
 
 # Prompt for summarizing multiple Jira issue titles
 SUMMARIZE_TITLES_PROMPT = """
-You are an assistant that summarizes multiple Jira issue titles into a concise summary.
-Given the following Jira issue titles, create a brief summary that captures the main themes
-and purposes of these issues collectively.
+You are an assistant that summarizes multiple Jira issue titles into a concise, action-oriented summary.
+Given the following Jira issue titles, create a brief summary that describes what was worked on,
+as if you're reporting on completed or ongoing work.
 
 Jira Issue Titles:
 {titles}
 
 Your summary should:
-1. Be concise (1-3 sentences)
-2. Capture the main themes across all issues
-3. Highlight any common goals or purposes
-4. Be written in a clear, professional style
-5. Avoid technical jargon unless it's essential
+1. Begin with phrases like "Worked on" or "Made progress on"
+2. Be concise (1-3 sentences)
+3. Describe the work in an action-oriented way
+4. Focus on the practical impact of the work
+5. Be written in a clear, professional, first-person style
+6. Use past tense as if reporting on work that was done
 
 Summary:
 """
