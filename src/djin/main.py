@@ -10,6 +10,9 @@ from rich.console import Console
 from djin.cli.app import main_loop
 from djin.common.config import is_configured, setup_config
 from djin.common.errors import handle_error
+from djin.features.tasks import commands as task_commands
+from djin.features.textsynth import commands as textsynth_commands
+from djin.features.notes import commands as notes_commands
 
 # Create console for rich output
 console = Console()
