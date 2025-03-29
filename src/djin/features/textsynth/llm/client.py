@@ -9,6 +9,7 @@ import logging
 import os
 from typing import Any, Dict, List
 
+from dotenv import load_dotenv
 from langchain_core.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 
@@ -19,6 +20,9 @@ from djin.features.textsynth.llm.prompts import (
     SUMMARIZE_TITLES_PROMPT,
     WEEKLY_REPORT_PROMPT,
 )
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Set up logging
 logger = logging.getLogger("djin.reports.llm")

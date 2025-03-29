@@ -5,17 +5,23 @@ Entry point for the application
 """
 
 import logging
+import os
 
+from dotenv import load_dotenv
 from rich.console import Console
 
 from djin.cli.app import main_loop
 from djin.common.config import ensure_config_dir
 
+# Load environment variables from .env file
+load_dotenv()
+
 # Set up console
 console = Console()
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+logging_level = os.environ.get("LOGGING_LEVEL", "INFO")
+logging.basicConfig(level=getattr(logging, logging_level))
 logger = logging.getLogger("djin")
 
 
