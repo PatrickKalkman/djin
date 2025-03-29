@@ -1,5 +1,5 @@
 """
-Command handlers for report generation.
+Command handlers for report generation and text synthesis.
 """
 
 from rich.console import Console
@@ -66,6 +66,29 @@ def custom_report_command(args):
         return False
 
 
+def summarize_titles_command(args):
+    """Summarize multiple Jira issue titles."""
+    try:
+        # Check if titles were provided
+        if not args:
+            console.print("[red]Error: No titles provided. Usage: /summarize 'Title 1' 'Title 2' ...[/red]")
+            return False
+            
+        # Get titles from arguments
+        titles = args
+        
+        # Generate summary
+        summary = report_agent.summarize_titles(titles)
+        
+        # Display summary
+        console.print(Panel(summary, title="Title Summary", border_style="green"))
+        
+        return True
+    except Exception as e:
+        console.print(f"[red]Error summarizing titles: {str(e)}[/red]")
+        return False
+
+
 # Register report commands
 register_command(
     "report daily",
@@ -83,4 +106,11 @@ register_command(
     "report custom",
     custom_report_command,
     "Generate a custom report of your tasks. Optional: specify number of days to look back (default: 7)",
+)
+
+# Register text synthesis commands
+register_command(
+    "summarize",
+    summarize_titles_command,
+    "Summarize multiple Jira issue titles. Usage: /summarize 'Title 1' 'Title 2' ...",
 )

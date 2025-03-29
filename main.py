@@ -24,8 +24,9 @@ def initialize_features():
     # Import feature commands to register them
     try:
         # Import task commands
-
-        # Import report commands
+        
+        # Import report and text synthesis commands
+        from djin.features.textsynth import commands as textsynth_commands
 
         # Log successful initialization
         logger.info("Features initialized successfully")

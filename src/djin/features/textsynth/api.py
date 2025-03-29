@@ -1,14 +1,16 @@
 """
-Public API for the report agent.
+Public API for the report and text synthesis agent.
 
-This module provides a public interface for other agents to call the report agent.
+This module provides a public interface for other agents to call the report and text synthesis agent.
 """
+
+from typing import List
 
 from djin.features.textsynth.agent import ReportAgent
 
 
 class ReportAPI:
-    """Public API for the report agent."""
+    """Public API for the report and text synthesis agent."""
 
     def __init__(self):
         """Initialize the report API with a report agent."""
@@ -43,3 +45,15 @@ class ReportAPI:
             str: Custom report
         """
         return self._agent.generate_custom_report(days=days)
+        
+    def summarize_titles(self, titles: List[str]) -> str:
+        """
+        Summarize multiple Jira issue titles.
+        
+        Args:
+            titles: List of Jira issue titles
+            
+        Returns:
+            str: Summarized text
+        """
+        return self._agent.summarize_titles(titles)

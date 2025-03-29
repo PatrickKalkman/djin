@@ -1,7 +1,27 @@
 """
-Prompts for report generation.
+Prompts for report generation and text synthesis.
 
-This module provides prompts for interacting with LLMs for report-related operations.
+This module provides prompts for interacting with LLMs for report-related operations
+and text synthesis.
+"""
+
+# Prompt for summarizing multiple Jira issue titles
+SUMMARIZE_TITLES_PROMPT = """
+You are an assistant that summarizes multiple Jira issue titles into a concise summary.
+Given the following Jira issue titles, create a brief summary that captures the main themes
+and purposes of these issues collectively.
+
+Jira Issue Titles:
+{titles}
+
+Your summary should:
+1. Be concise (1-3 sentences)
+2. Capture the main themes across all issues
+3. Highlight any common goals or purposes
+4. Be written in a clear, professional style
+5. Avoid technical jargon unless it's essential
+
+Summary:
 """
 
 # Prompt for generating a daily report

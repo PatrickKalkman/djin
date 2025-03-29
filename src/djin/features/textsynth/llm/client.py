@@ -1,21 +1,27 @@
 """
-LLM client for report generation.
+LLM client for report generation and text synthesis.
 
-This module provides a client for interacting with LLMs for report-related operations.
+This module provides a client for interacting with LLMs for report-related operations
+and text synthesis.
 """
 
 import logging
 from typing import Any, Dict, List
 
 from djin.common.errors import DjinError
-from djin.features.textsynth.llm.prompts import CUSTOM_REPORT_PROMPT, DAILY_REPORT_PROMPT, WEEKLY_REPORT_PROMPT
+from djin.features.textsynth.llm.prompts import (
+    CUSTOM_REPORT_PROMPT,
+    DAILY_REPORT_PROMPT,
+    SUMMARIZE_TITLES_PROMPT,
+    WEEKLY_REPORT_PROMPT,
+)
 
 # Set up logging
 logger = logging.getLogger("djin.reports.llm")
 
 
 class ReportLLMClient:
-    """Client for interacting with LLMs for report operations."""
+    """Client for interacting with LLMs for report operations and text synthesis."""
 
     def __init__(self, model: str = "gpt-4"):
         """
@@ -26,6 +32,35 @@ class ReportLLMClient:
         """
         self.model = model
         # TODO: Initialize the actual LLM client (e.g., OpenAI, Anthropic, etc.)
+        
+    def summarize_titles(self, titles: List[str]) -> str:
+        """
+        Summarize multiple Jira issue titles.
+        
+        Args:
+            titles: List of Jira issue titles
+            
+        Returns:
+            str: Summarized text
+            
+        Raises:
+            DjinError: If the summarization fails
+        """
+        try:
+            logger.info(f"Summarizing {len(titles)} Jira issue titles")
+            
+            # Format titles for the prompt
+            titles_str = "\n".join([f"- {title}" for title in titles])
+            
+            # Prepare prompt
+            prompt = SUMMARIZE_TITLES_PROMPT.format(titles=titles_str)
+            
+            # TODO: Implement actual LLM call with proper prompting
+            
+            # Placeholder implementation
+            return f"Summary of {len(titles)} issues: These issues collectively focus on improving system functionality and user experience."
+        except Exception as e:
+            raise DjinError(f"Failed to summarize titles: {str(e)}")
 
     def generate_daily_report(
         self, active_tasks: List[Dict[str, Any]], completed_tasks: List[Dict[str, Any]], date: str
