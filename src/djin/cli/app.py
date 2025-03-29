@@ -90,6 +90,7 @@ def main_loop():
     session = PromptSession(history=FileHistory(str(history_dir / "history")), style=style)
 
     # Import all feature modules to ensure commands are registered
+    # This is done in main.py's initialize_features function
 
     # Display welcome message
     display_welcome()

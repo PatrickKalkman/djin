@@ -31,20 +31,20 @@ def initialize_features():
     # Import feature commands to register them
     try:
         # Import task commands
-        from djin.features.tasks import commands as tasks_commands
+        import djin.features.tasks.commands
         logger.info("Loaded tasks commands")
         
         # Import report and text synthesis commands
-        from djin.features.textsynth import commands as textsynth_commands
+        import djin.features.textsynth.commands
         logger.info("Loaded textsynth commands")
         
         # Import orchestrator commands
-        from djin.features.orchestrator import commands as orchestrator_commands
+        import djin.features.orchestrator.commands
         logger.info("Loaded orchestrator commands")
         
         # Import notes commands if available
         try:
-            from djin.features.notes import commands as notes_commands
+            import djin.features.notes.commands
             logger.info("Loaded notes commands")
         except ImportError:
             logger.debug("Notes feature not available")
