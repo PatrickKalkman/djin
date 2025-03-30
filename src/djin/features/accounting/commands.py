@@ -8,7 +8,8 @@ from loguru import logger  # Import Loguru logger
 from rich.console import Console
 
 from djin.cli.commands import register_command
-from djin.common.errors import DjinError, handle_error
+from djin.common.errors import DjinError, MoneyMonkError, ConfigurationError, handle_error # Added MoneyMonkError, ConfigurationError
+from djin.features.accounting.tagui_client import login_to_moneymonk # Import the login function
 
 # Import the API to interact with the agent/workflow
 from djin.features.accounting.api import get_accounting_api
@@ -19,6 +20,29 @@ console = Console()
 
 
 # --- Command Handlers ---
+
+def login_command(args: List[str]) -> bool:
+    """Test the MoneyMonk login process using TagUI."""
+    logger.info("Received accounting login command.")
+    console.print("[cyan]Attempting to log in to MoneyMonk via TagUI...[/cyan]")
+    try:
+        success = login_to_moneymonk()
+        if success:
+            console.print("[green]MoneyMonk login successful (based on TagUI script execution).[/green]")
+            return True
+        else:
+            # _run_tagui_script might return False if output suggests failure but exit code was 0
+            console.print("[yellow]MoneyMonk login script finished, but may have failed (check TagUI output/logs).[/yellow]")
+            return False
+    except (ConfigurationError, MoneyMonkError) as e:
+        # Handle specific errors related to config or TagUI execution
+        handle_error(e)
+        return False
+    except Exception as e:
+        # Handle unexpected errors
+        logger.error(f"Unexpected error during MoneyMonk login test: {e}", exc_info=True)
+        handle_error(DjinError(f"An unexpected error occurred during login test: {str(e)}"))
+        return False
 
 
 def register_hours_command(args: List[str]) -> bool:
@@ -70,6 +94,10 @@ def register_accounting_commands():
         "accounting register-hours": (
             register_hours_command,
             "Register hours on external platform (Usage: /accounting register-hours YYYY-MM-DD hours description)",
+        ),
+        "accounting login": (
+            login_command,
+            "Test the login process for MoneyMonk using TagUI.",
         ),
         # Add other accounting commands here
     }
