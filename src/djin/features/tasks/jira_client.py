@@ -477,20 +477,20 @@ def search_issues(jql: str) -> List[Any]:
 def get_worked_on_issues(date_str: str = None) -> List[Any]:
     """
     Get issues that were worked on by the current user on a specific date.
-    
+
     Args:
         date_str: Date string in YYYY-MM-DD format (default: today)
-        
+
     Returns:
         List[Any]: List of JIRA issue objects
-        
+
     Raises:
         JiraError: If the search fails
     """
-    from datetime import datetime, date, timedelta
-    
+    from datetime import date, datetime, timedelta
+
     jira = get_jira_client()
-    
+
     try:
         # If no date provided, use today
         if not date_str:
@@ -502,24 +502,24 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
                 target_date = date_str
             except ValueError:
                 raise JiraError(f"Invalid date format: {date_str}. Please use YYYY-MM-DD format.")
-        
+
         # Parse the target date to create date range
         parsed_date = datetime.strptime(target_date, "%Y-%m-%d").date()
         next_day = (parsed_date + timedelta(days=1)).strftime("%Y-%m-%d")
-        
+
         # Log the search parameters
         logger.info(f"Searching for issues worked on between {target_date} and {next_day}")
-        
+
         # Try multiple approaches to find worked-on issues
         all_issues = []
-        
+
         # 1. First try with worklogDate (standard approach)
         jql = f"worklogDate = {target_date} AND worklogAuthor = currentUser() ORDER BY updated DESC"
         logger.info(f"Executing JQL: {jql}")
         worklog_issues = jira.search_issues(jql)
         logger.info(f"Found {len(worklog_issues)} issues with worklog entries")
         all_issues.extend([issue.key for issue in worklog_issues])
-        
+
         # 2. Try with updated date (might have worked on it without logging time)
         # Use a date range to ensure we catch all updates
         jql = f"assignee = currentUser() AND updated >= '{target_date} 00:00' AND updated <= '{target_date} 23:59' ORDER BY updated DESC"
@@ -527,7 +527,7 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
         updated_issues = jira.search_issues(jql)
         logger.info(f"Found {len(updated_issues)} issues updated on this date")
         all_issues.extend([issue.key for issue in updated_issues if issue.key not in all_issues])
-        
+
         # 3. Try with status changes (e.g., moved to In Progress)
         # Look for status changes on the target date
         jql = f"assignee = currentUser() AND status CHANGED DURING ('{target_date} 00:00', '{target_date} 23:59') ORDER BY updated DESC"
@@ -535,21 +535,21 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
         status_changed_issues = jira.search_issues(jql)
         logger.info(f"Found {len(status_changed_issues)} issues with status changes")
         all_issues.extend([issue.key for issue in status_changed_issues if issue.key not in all_issues])
-        
+
         # 4. Include all In Progress issues as a fallback
-        jql = f"assignee = currentUser() AND status = 'In Progress' ORDER BY updated DESC"
+        jql = "assignee = currentUser() AND status = 'In Progress' ORDER BY updated DESC"
         logger.info(f"Executing JQL: {jql}")
         in_progress_issues = jira.search_issues(jql)
         logger.info(f"Found {len(in_progress_issues)} issues in progress")
         all_issues.extend([issue.key for issue in in_progress_issues if issue.key not in all_issues])
-        
+
         # 5. Include issues that were assigned to you on this date
         jql = f"assignee = currentUser() AND assignee CHANGED DURING ('{target_date} 00:00', '{target_date} 23:59') ORDER BY updated DESC"
         logger.info(f"Executing JQL: {jql}")
         assigned_issues = jira.search_issues(jql)
         logger.info(f"Found {len(assigned_issues)} issues assigned on this date")
         all_issues.extend([issue.key for issue in assigned_issues if issue.key not in all_issues])
-        
+
         # If we have any issues, fetch them all at once with full details
         if all_issues:
             # Remove duplicates while preserving order
@@ -557,9 +557,9 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
             for key in all_issues:
                 if key not in unique_issues:
                     unique_issues.append(key)
-            
+
             logger.info(f"Found {len(unique_issues)} unique issues in total")
-            
+
             # Fetch all issues at once if there are any
             if unique_issues:
                 jql = f"key in ({','.join(unique_issues)}) AND status != 'To Do' ORDER BY updated DESC"
@@ -571,7 +571,7 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
         else:
             logger.info("No issues found across all search methods")
             issues = []
-        
+
         # Fetch worklog information for each issue
         for issue in issues:
             try:
@@ -580,12 +580,10 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
             except Exception as e:
                 logger.error(f"Error fetching worklog for {issue.key}: {str(e)}")
                 issue.worklog_seconds = 0
-                
+
         return issues
     except Exception as e:
         raise JiraError(f"Failed to get issues worked on for {date_str or 'today'}: {str(e)}")
-
-
 
 
 def get_available_transitions(issue_key: str) -> List[str]:
