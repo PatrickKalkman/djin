@@ -257,10 +257,11 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
                 page.wait_for_selector(time_input, state="visible", timeout=5000)
                 page.wait_for_selector(desc_selector, state="visible", timeout=5000)
                 page.wait_for_selector(project_dropdown_trigger, state="visible", timeout=5000)
-                page.wait_for_selector(submit_button_selector, state="visible", timeout=5000)
-                logger.debug("Modal form elements found.")
+                
+                # Don't wait for submit button yet - it might not be visible until form is filled
+                logger.debug("Basic form elements found. Will check for submit button after filling form.")
             except PlaywrightTimeoutError as e:
-                error_msg = f"Timeout waiting for modal form elements: {e}"
+                error_msg = f"Timeout waiting for basic form elements: {e}"
                 logger.error(error_msg)
                 screenshot_path = Path("~/.Djin/logs/modal_form_timeout.png").expanduser()
                 page.screenshot(path=str(screenshot_path))
@@ -334,9 +335,49 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             page.screenshot(path=str(screenshot_path))
             logger.debug(f"Screenshot before submission saved to {screenshot_path}")
 
-            # Submit the form
-            logger.debug(f"Clicking submit button: {submit_button_selector}")
-            page.click(submit_button_selector)
+            # Now wait for and click the submit button
+            # Try multiple selectors for the submit button in case the specific text varies
+            submit_button_selectors = [
+                "button[data-testid='button']:has-text('Toevoegen')",  # Original Dutch
+                "button[data-testid='button']:has-text('Add')",         # English alternative
+                "button[data-testid='button']",                         # Any button with this test ID as fallback
+            ]
+            
+            submit_button_found = False
+            for selector in submit_button_selectors:
+                try:
+                    logger.debug(f"Looking for submit button with selector: {selector}")
+                    if page.is_visible(selector, timeout=2000):
+                        logger.info(f"Found submit button with selector: {selector}")
+                        page.click(selector)
+                        submit_button_found = True
+                        break
+                except PlaywrightTimeoutError:
+                    logger.debug(f"Submit button not found with selector: {selector}")
+                    continue
+            
+            if not submit_button_found:
+                logger.warning("Could not find submit button with any of the predefined selectors")
+                # Take a screenshot to see what's on screen
+                screenshot_path = Path("~/.Djin/logs/submit_button_not_found.png").expanduser()
+                page.screenshot(path=str(screenshot_path))
+                logger.warning(f"Screenshot saved to: {screenshot_path}")
+                
+                # Try a last resort approach - look for any button that might be the submit button
+                try:
+                    logger.debug("Trying to find any button that might be the submit button")
+                    buttons = page.query_selector_all("button")
+                    logger.debug(f"Found {len(buttons)} buttons on page")
+                    
+                    # Click the last button (often the submit button in forms)
+                    if buttons:
+                        logger.info("Clicking the last button on the page as fallback")
+                        buttons[-1].click()
+                        submit_button_found = True
+                except Exception as e:
+                    logger.error(f"Error in fallback button click approach: {e}")
+            
+            # Wait after submission attempt
             page.wait_for_timeout(3000)  # Wait for submission processing
 
             # --- 4. Verify Submission ---
