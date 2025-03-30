@@ -22,15 +22,16 @@ Your summary should:
 5. Be written in a clear, professional, first-person style.
 6. Use past tense as if reporting on work that was done.
 7. Do NOT include commentary about improvements, benefits, or the quality of the work.
-8. IMPORTANT: Include ALL the provided Jira issue keys (e.g., PROJ-123) in parentheses at the end of the summary sentence.
+8. IMPORTANT: Include the corresponding Jira issue key (e.g., PROJ-123) in parentheses immediately after mentioning the work related to that issue.
 
 Example Input:
 Jira Issues:
 - TASK-1: Fix login bug
 - FEAT-2: Implement new dashboard
+- BUG-3: Investigate performance issue
 
 Example Output:
-Worked on fixing a login bug and implementing the new dashboard (TASK-1, FEAT-2).
+Worked on fixing a login bug (TASK-1), implementing the new dashboard (FEAT-2), and investigating a performance issue (BUG-3).
 
 Summary:
 """
