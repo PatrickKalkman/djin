@@ -4,20 +4,20 @@ Client for interacting with external websites using TagUI (or similar).
 This module will contain the logic to automate browser interactions
 for tasks like registering hours on platforms like MoneyMonk.
 """
-import os # Keep os for potential future use, but not for secrets
+
 import subprocess
 import time
 from pathlib import Path
 
-import keyring # Import keyring
+import keyring  # Import keyring
 import pyotp
-from loguru import logger # Import Loguru logger
+from loguru import logger  # Import Loguru logger
 
-from djin.common.config import SERVICE_NAME, load_config # Import SERVICE_NAME and load_config
-from djin.common.errors import ConfigurationError, MoneyMonkError # Import custom errors
-
+from djin.common.config import SERVICE_NAME, load_config  # Import SERVICE_NAME and load_config
+from djin.common.errors import ConfigurationError, MoneyMonkError  # Import custom errors
 
 # --- Helper Functions ---
+
 
 def _get_moneymonk_credentials():
     """Loads MoneyMonk credentials from config and keyring."""
@@ -35,18 +35,22 @@ def _get_moneymonk_credentials():
 
     # Construct keyring usernames based on the pattern in config.py
     # Assumes password handling is added to config.py setup
-    password_key = f"moneymonk_password_{username}" # Key used in config setup
-    totp_key = f"moneymonk_totp_{username}"         # Key used in config setup
+    password_key = f"moneymonk_password_{username}"  # Key used in config setup
+    totp_key = f"moneymonk_totp_{username}"  # Key used in config setup
 
     password = keyring.get_password(SERVICE_NAME, password_key)
     totp_secret = keyring.get_password(SERVICE_NAME, totp_key)
 
     if not password:
-         logger.error(f"MoneyMonk password not found in keyring for key '{password_key}' under service '{SERVICE_NAME}'.")
-         raise ConfigurationError("MoneyMonk password not found in keyring. Please run 'djin --setup' to configure it.")
+        logger.error(
+            f"MoneyMonk password not found in keyring for key '{password_key}' under service '{SERVICE_NAME}'."
+        )
+        raise ConfigurationError("MoneyMonk password not found in keyring. Please run 'djin --setup' to configure it.")
     if not totp_secret:
-         logger.error(f"MoneyMonk TOTP secret not found in keyring for key '{totp_key}' under service '{SERVICE_NAME}'.")
-         raise ConfigurationError("MoneyMonk TOTP secret not found in keyring. Please run 'djin --setup' to configure it.")
+        logger.error(f"MoneyMonk TOTP secret not found in keyring for key '{totp_key}' under service '{SERVICE_NAME}'.")
+        raise ConfigurationError(
+            "MoneyMonk TOTP secret not found in keyring. Please run 'djin --setup' to configure it."
+        )
     else:
         logger.debug("Successfully retrieved password and TOTP secret from keyring.")
     # --- End Secret Handling ---
@@ -84,7 +88,9 @@ def _run_tagui_script(script_content: str, script_name: str = "temp_script") -> 
         # Use -q for quieter execution, remove if debugging needed
         command = ["tagui", str(script_path), "-q"]
         logger.info(f"Executing TagUI command: {' '.join(command)}")
-        result = subprocess.run(command, capture_output=True, text=True, check=False) # check=False to handle errors manually
+        result = subprocess.run(
+            command, capture_output=True, text=True, check=False
+        )  # check=False to handle errors manually
 
         logger.debug(f"TagUI stdout:\n{result.stdout}")
         logger.debug(f"TagUI stderr:\n{result.stderr}")
@@ -99,9 +105,9 @@ def _run_tagui_script(script_content: str, script_name: str = "temp_script") -> 
             # Basic success check: Look for common failure indicators in output
             # This might need refinement based on actual MoneyMonk/TagUI output on failure
             if "error" in result.stdout.lower() or "fail" in result.stdout.lower():
-                 logger.warning(f"TagUI script finished but output suggests potential failure.")
-                 # Decide if this should be treated as an error
-                 # return False # Or raise MoneyMonkError
+                logger.warning("TagUI script finished but output suggests potential failure.")
+                # Decide if this should be treated as an error
+                # return False # Or raise MoneyMonkError
             logger.info("TagUI script executed successfully.")
             return True
 
@@ -122,6 +128,7 @@ def _run_tagui_script(script_content: str, script_name: str = "temp_script") -> 
 
 
 # --- Main Functions ---
+
 
 def login_to_moneymonk() -> bool:
     """
@@ -145,12 +152,12 @@ def login_to_moneymonk() -> bool:
         # It's often cleaner to use .format() or build the string step-by-step
         script = f"""
 // TagUI script to log in to MoneyMonk
-{creds['url']}
+{creds["url"]}
 wait 2 seconds // Wait for page load
 
 // Enter credentials
-type #email as {creds['username']}
-type #password as {creds['password']}
+type #email as {creds["username"]}
+type #password as {creds["password"]}
 click button[data-testid="button"]
 wait 2 seconds // Wait for potential redirect or TOTP page load
 
@@ -182,7 +189,7 @@ if result == true {{
     except (ConfigurationError, MoneyMonkError) as e:
         # Log already happened in helper or here
         logger.error(f"MoneyMonk login failed: {e}")
-        raise # Re-raise the specific error
+        raise  # Re-raise the specific error
     except Exception as e:
         logger.error(f"An unexpected error occurred during MoneyMonk login: {e}", exc_info=True)
         raise MoneyMonkError(f"An unexpected error during login: {str(e)}")

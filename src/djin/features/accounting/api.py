@@ -1,9 +1,10 @@
 """
 Public API for the accounting agent.
 """
+
 from typing import Any, Dict
 
-from loguru import logger # Import Loguru logger
+from loguru import logger  # Import Loguru logger
 
 from djin.features.accounting.agent import AccountingAgent
 

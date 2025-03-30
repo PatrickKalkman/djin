@@ -13,6 +13,7 @@ dependencies = [
     "python-dotenv>=1.1.0",
     "rich>=13.9.4",
     "loguru>=0.7.2", # Added loguru
+    "pyotp>=2.9.0",
 ]
 
 [build-system]
