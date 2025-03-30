@@ -204,5 +204,5 @@ def main_loop():
 
 if __name__ == "__main__":
     # Basic logging setup if run directly (usually configured elsewhere)
-    logging.basicConfig(level=logging.INFO)
+    # logging.basicConfig(level=logging.INFO) # Removed - Loguru is configured in main()
     main_loop()
