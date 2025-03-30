@@ -25,8 +25,8 @@ console = Console()
 def login_command(args: List[str]) -> bool:
     """Test the MoneyMonk login process using Playwright."""
     logger.info("Received accounting login command.")
-    # Determine if headless mode should be disabled (e.g., for debugging)
-    headless = "--no-headless" not in args
+    # Default to non-headless mode so user can see what's happening
+    headless = "--headless" in args
     console.print(f"[cyan]Attempting to log in to MoneyMonk via Playwright (headless={headless})...[/cyan]")
     try:
         # Pass headless argument to the login function

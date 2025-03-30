@@ -63,7 +63,7 @@ def _get_moneymonk_credentials():
 # --- Context Manager for Playwright ---
 
 @contextlib.contextmanager
-def playwright_context(headless=True):
+def playwright_context(headless=False):
     """Provides a Playwright browser context."""
     pw = None
     browser = None

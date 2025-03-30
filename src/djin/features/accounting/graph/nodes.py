@@ -70,8 +70,8 @@ def register_hours_node(state):
                 "errors": state.errors} # Keep existing errors
 
     logger.info(f"Attempting to register hours for {state.date} via Playwright.")
-    # Determine headless mode (could be configurable later)
-    headless = True
+    # Default to non-headless mode so user can see what's happening
+    headless = False
     try:
         # Call the actual Playwright client function
         # Ensure state.hours is float here (validated in previous node)
