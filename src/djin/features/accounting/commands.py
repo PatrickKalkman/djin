@@ -258,8 +258,17 @@ def login_command(args: List[str]) -> bool:
 
 
                     console.print("[green]Form fields pre-filled successfully.[/green]")
-                    console.print("[cyan]Form NOT submitted. Waiting 1 second for visual inspection...[/cyan]")
-                    page.wait_for_timeout(1000) # Reduced wait time for inspection
+                    console.print("[cyan]Waiting 1 second before submitting form...[/cyan]")
+                    page.wait_for_timeout(1000) # Wait before submitting
+                    
+                    # Submit the form by clicking the "Toevoegen" button
+                    submit_button_selector = "button[data-testid='button']:has-text('Toevoegen')"
+                    logger.debug(f"Clicking submit button: {submit_button_selector}")
+                    page.click(submit_button_selector)
+                    
+                    console.print("[green]Form submitted successfully.[/green]")
+                    console.print("[cyan]Waiting 1 second for visual confirmation...[/cyan]")
+                    page.wait_for_timeout(1000) # Wait after submission for visual confirmation
 
                 except PlaywrightTimeoutError as pte:
                     logger.error(f"Timeout error during form filling: {pte}")
