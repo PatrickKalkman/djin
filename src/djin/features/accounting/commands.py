@@ -184,10 +184,12 @@ def login_command(args: List[str]) -> bool:
             # --- Form Interaction ---
             time_input = "input#time" # Selector for the time input field
             desc_selector = "input#description" # Selector for description (updated based on HTML)
-            project_dropdown_trigger = 'div[class*="react-select__control"]' # Selector for project dropdown
-            project_option_selector = 'div[class*="react-select__option"]' # Selector for dropdown options
+            project_dropdown_trigger = 'div.react-select__control' # More specific selector for dropdown trigger
+            project_input_selector = 'input#projectId' # The actual input field for filtering
+            project_option_selector_base = 'div[class*="react-select__option"]' # Base selector for options
             project_name_to_select = "AION Titan Streaming PI" # The specific project name
-            selected_project_value_selector = 'div[class*="react-select__single-value"]' # Selector for chosen project
+            specific_project_option_selector = f"{project_option_selector_base}:has-text('{project_name_to_select}')" # Selector for the specific option
+            selected_project_value_selector = 'div[class*="react-select__single-value"]' # Selector for chosen project display
 
             if page.is_visible(time_input):
                 console.print("[green]Time entry page loaded successfully (time input field visible).[/green]")
@@ -209,20 +211,43 @@ def login_command(args: List[str]) -> bool:
                     logger.debug(f"Filling description: {description}")
                     page.fill(desc_selector, description)
 
-                    # Select project
+                    # Select project using input filtering
                     logger.debug(f"Selecting project: {project_name_to_select}")
+                    logger.debug(f"Clicking project dropdown trigger: {project_dropdown_trigger}")
                     page.click(project_dropdown_trigger)
-                    logger.debug("Waiting for project dropdown options...")
-                    page.wait_for_selector(project_option_selector, state='visible', timeout=5000)
-                    logger.debug(f"Clicking project option: {project_name_to_select}")
-                    page.click(f"{project_option_selector}:has-text('{project_name_to_select}')")
+                    # Wait briefly for dropdown to potentially animate/open
+                    page.wait_for_timeout(500)
+
+                    logger.debug(f"Typing project name '{project_name_to_select}' into input: {project_input_selector}")
+                    # Use locator().fill() which is generally more reliable for inputs
+                    page.locator(project_input_selector).fill(project_name_to_select)
+                    # Wait for the specific option to appear after filtering
+                    logger.debug(f"Waiting for specific project option to be visible: {specific_project_option_selector}")
+                    page.wait_for_selector(specific_project_option_selector, state='visible', timeout=5000)
+
+                    logger.debug(f"Clicking specific project option: {project_name_to_select}")
+                    page.click(specific_project_option_selector)
 
                     # Verify project selection
+                    logger.debug(f"Verifying selection using selector: {selected_project_value_selector}")
                     page.wait_for_timeout(500) # Short wait for value to update
-                    selected_value = page.text_content(selected_project_value_selector, timeout=2000)
-                    logger.info(f"Selected project verified: {selected_value}")
-                    if project_name_to_select not in selected_value:
-                         logger.warning(f"Selected project text '{selected_value}' does not exactly match '{project_name_to_select}'")
+                    try:
+                        # Wait for the selected value element to contain the project name
+                        page.wait_for_selector(f"{selected_project_value_selector}:has-text('{project_name_to_select}')", timeout=3000)
+                        selected_value = page.text_content(selected_project_value_selector, timeout=1000)
+                        logger.info(f"Selected project verified: {selected_value}")
+                        # Optional: More robust check if needed
+                        # if project_name_to_select not in selected_value:
+                        #     logger.warning(f"Selected project text '{selected_value}' does not exactly match '{project_name_to_select}'")
+                    except PlaywrightTimeoutError:
+                        selected_value_now = page.text_content(selected_project_value_selector, timeout=500) # Get current value if wait failed
+                        logger.warning(f"Verification failed: Could not find '{project_name_to_select}' in selected value element '{selected_project_value_selector}'. Current value: '{selected_value_now}'")
+                        # Consider taking a screenshot here for debugging
+                        screenshot_path = Path("~/.Djin/logs/project_selection_verification_failed.png").expanduser()
+                        page.screenshot(path=str(screenshot_path))
+                        logger.warning(f"Screenshot saved to: {screenshot_path}")
+                        # Decide if this should be a hard failure or just a warning
+                        # return False # Uncomment to make it a hard failure
 
 
                     console.print("[green]Form fields pre-filled successfully.[/green]")
