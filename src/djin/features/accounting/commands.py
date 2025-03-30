@@ -4,7 +4,7 @@ Command handlers for accounting features.
 
 from typing import List
 
-from loguru import logger # Import Loguru logger
+from loguru import logger  # Import Loguru logger
 from rich.console import Console
 
 from djin.cli.commands import register_command
