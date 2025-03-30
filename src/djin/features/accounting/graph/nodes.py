@@ -3,10 +3,15 @@ Node definitions for accounting workflows.
 """
 from datetime import datetime
 
-from loguru import logger # Import Loguru logger
+from datetime import datetime
 
-# Placeholder for actual TagUI client import
-# from djin.features.accounting.tagui_client import register_hours_on_website
+from loguru import logger # Import Loguru logger
+# Import Playwright exceptions and the actual client function
+from playwright.sync_api import Error as PlaywrightError, TimeoutError as PlaywrightTimeoutError
+
+# Import the actual Playwright client function
+from djin.features.accounting.playwright_client import register_hours_on_website
+from djin.common.errors import MoneyMonkError # Import MoneyMonkError for specific handling
 
 # Loguru logger is imported directly
 
@@ -64,28 +69,32 @@ def register_hours_node(state):
                 "registration_message": "Input validation failed.",
                 "errors": state.errors} # Keep existing errors
 
-    logger.info(f"Attempting to register hours for {state.date} via TagUI.")
+    logger.info(f"Attempting to register hours for {state.date} via Playwright.")
+    # Determine headless mode (could be configurable later)
+    headless = True
     try:
-        # --- Placeholder ---
-        # Replace with actual call to TagUI client function
-        # success = register_hours_on_website(state.date, state.description, state.hours)
-        logger.warning("register_hours_node: TagUI interaction is not implemented. Simulating success.")
-        success = True # Simulate success for now
-        # --- End Placeholder ---
+        # Call the actual Playwright client function
+        # Ensure state.hours is float here (validated in previous node)
+        success = register_hours_on_website(state.date, state.description, state.hours, headless=headless)
 
         if success:
-            logger.info("Hour registration successful (simulated).")
-            return {"registration_successful": True, "registration_message": "Hours registered successfully (simulated)."}
+            logger.info("Playwright: Hour registration reported successful.")
+            return {"registration_successful": True, "registration_message": "Hours registered successfully via Playwright."}
         else:
-            logger.error("Hour registration failed (simulated).")
-            error_msg = "Hour registration failed via TagUI (simulated)."
+            # This path might not be reached if register_hours_on_website raises exceptions on failure
+            logger.error("Playwright: Hour registration function returned False.")
+            error_msg = "Hour registration failed via Playwright (returned False)."
             return {"registration_successful": False, "registration_message": error_msg, "errors": state.errors + [error_msg]}
-    except NotImplementedError:
-         logger.error("Hour registration failed: TagUI function not implemented.")
-         error_msg = "Hour registration failed: Automation function not implemented."
-         return {"registration_successful": False, "registration_message": error_msg, "errors": state.errors + [error_msg]}
-    except Exception as e:
-        logger.error(f"Error during hour registration node: {e}", exc_info=True)
+    except MoneyMonkError as e: # Catch errors raised by our client
+         logger.error(f"Hour registration failed: {e}")
+         # Use the error message from the exception
+         return {"registration_successful": False, "registration_message": str(e), "errors": state.errors + [str(e)]}
+    except (PlaywrightTimeoutError, PlaywrightError) as e: # Catch specific Playwright errors
+        logger.error(f"Playwright error during hour registration: {e}")
+        error_msg = f"Browser automation error during registration: {str(e)}"
+        return {"registration_successful": False, "registration_message": error_msg, "errors": state.errors + [error_msg]}
+    except Exception as e: # Catch any other unexpected errors
+        logger.error(f"Unexpected error during hour registration node: {e}", exc_info=True)
         error_msg = f"An unexpected error occurred during hour registration: {str(e)}"
         return {"registration_successful": False, "registration_message": error_msg, "errors": state.errors + [error_msg]}
 

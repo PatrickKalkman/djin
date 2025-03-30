@@ -58,179 +58,241 @@ def _get_moneymonk_credentials():
     return {"url": url, "username": username, "password": password, "totp_secret": totp_secret}
 
 
-def _run_tagui_script(script_content: str, script_name: str = "temp_script") -> bool:
-    """
-    Runs a TagUI script saved to a temporary file.
+# --- Context Manager for Playwright ---
 
-    Args:
-        script_content: The content of the TagUI script.
-        script_name: A base name for the temporary script file.
-
-    Returns:
-        True if the script executed successfully (exit code 0), False otherwise.
-
-    Raises:
-        MoneyMonkError: If TagUI command is not found or execution fails unexpectedly.
-    """
-    # Use Djin's config dir for temp files
-    temp_dir = Path("~/.Djin/temp").expanduser()
-    temp_dir.mkdir(parents=True, exist_ok=True)
-    script_path = temp_dir / f"{script_name}_{int(time.time())}.tag"
-
+@contextlib.contextmanager
+def playwright_context(headless=True):
+    """Provides a Playwright browser context."""
+    pw = None
+    browser = None
+    context = None
+    page = None
     try:
-        # Write script to temp file
-        with open(script_path, "w") as f:
-            f.write(script_content)
-        logger.debug(f"TagUI script written to: {script_path}")
-
-        # Load config to get TagUI path
-        config = load_config()
-        tagui_executable = config.get("tagui", {}).get("path", "tagui") # Default to 'tagui' if not set
-
-        # Execute TagUI script
-        # Use -q for quieter execution, remove if debugging needed
-        command = [tagui_executable, str(script_path), "-q"]
-        logger.info(f"Executing TagUI command: {' '.join(command)}")
-        try:
-            result = subprocess.run(
-                command, capture_output=True, text=True, check=False, timeout=60 # Added timeout
-            )  # check=False to handle errors manually
-        except FileNotFoundError:
-             logger.error(f"TagUI command '{tagui_executable}' not found. Check config or PATH.")
-             raise MoneyMonkError(f"TagUI command '{tagui_executable}' not found. Please ensure it's installed and the path is configured correctly (run 'djin --setup').")
-        except subprocess.TimeoutExpired:
-            logger.error("TagUI script execution timed out after 60 seconds.")
-            raise MoneyMonkError("TagUI script execution timed out.")
-
-        logger.debug(f"TagUI stdout:\n{result.stdout}")
-        logger.debug(f"TagUI stderr:\n{result.stderr}")
-
-        if result.returncode != 0:
-            error_message = f"TagUI script execution failed with exit code {result.returncode}."
-            logger.error(error_message)
-            logger.error(f"TagUI stderr: {result.stderr}")
-            # Consider including stderr in the exception for more context
-            raise MoneyMonkError(f"{error_message} See logs for details.")
-        else:
-            # Basic success check: Look for common failure indicators in output
-            # This might need refinement based on actual MoneyMonk/TagUI output on failure
-            if "error" in result.stdout.lower() or "fail" in result.stdout.lower():
-                logger.warning("TagUI script finished but output suggests potential failure.")
-                # Decide if this should be treated as an error
-                # return False # Or raise MoneyMonkError
-            logger.info("TagUI script executed successfully.")
-            return True
-
-    # FileNotFoundError is now caught inside the try block where subprocess.run is called
-    except MoneyMonkError as e: # Catch specific errors raised within the try block
-        logger.error(f"TagUI execution failed: {e}")
-        raise # Re-raise the specific error
-    except Exception as e:
-        logger.error(f"An unexpected error occurred during TagUI script execution: {e}", exc_info=True)
-        raise MoneyMonkError(f"An unexpected error occurred during TagUI script execution: {str(e)}")
+        pw = sync_playwright().start()
+        # Launch Chromium by default. Can be configured later.
+        browser = pw.chromium.launch(headless=headless)
+        context = browser.new_context()
+        page = context.new_page()
+        page.set_default_timeout(DEFAULT_TIMEOUT) # Set default timeout for operations
+        logger.info(f"Playwright browser launched (headless={headless}).")
+        yield page
+    except PlaywrightError as e:
+        logger.error(f"Playwright setup failed: {e}")
+        raise MoneyMonkError(f"Failed to initialize Playwright browser: {e}")
     finally:
-        # Clean up the temporary script file
-        if script_path.exists():
+        if page:
             try:
-                script_path.unlink()
-                logger.debug(f"Temporary TagUI script deleted: {script_path}")
-            except OSError as e:
-                logger.warning(f"Could not delete temporary TagUI script {script_path}: {e}")
+                page.close()
+            except PlaywrightError as e:
+                logger.warning(f"Error closing Playwright page: {e}")
+        if context:
+            try:
+                context.close()
+            except PlaywrightError as e:
+                logger.warning(f"Error closing Playwright context: {e}")
+        if browser:
+            try:
+                browser.close()
+            except PlaywrightError as e:
+                logger.warning(f"Error closing Playwright browser: {e}")
+        if pw:
+            try:
+                pw.stop()
+                logger.info("Playwright stopped.")
+            except Exception as e: # Catch broader exceptions on stop
+                logger.warning(f"Error stopping Playwright: {e}")
 
 
 # --- Main Functions ---
 
-
-def login_to_moneymonk() -> bool:
+def login_to_moneymonk(headless=True) -> bool:
     """
-    Logs into the MoneyMonk website using TagUI.
+    Logs into the MoneyMonk website using Playwright.
+
+    Args:
+        headless: Run the browser in headless mode (default True).
 
     Returns:
-        True if login is successful, False otherwise.
+        True if login is successful, False otherwise (though exceptions are preferred).
 
     Raises:
         ConfigurationError: If credentials are not configured.
-        MoneyMonkError: If login fails due to TagUI execution or website issues.
+        MoneyMonkError: If login fails due to Playwright execution or website issues.
     """
-    logger.info("Attempting to log in to MoneyMonk...")
+    logger.info(f"Attempting to log in to MoneyMonk via Playwright (headless={headless})...")
     try:
         creds = _get_moneymonk_credentials()
         totp_code = pyotp.TOTP(creds["totp_secret"]).now()
         logger.info("Generated TOTP code.")
 
-        # Construct TagUI script
-        # Using f-string requires escaping curly braces {{ }} for TagUI variables/syntax
-        # It's often cleaner to use .format() or build the string step-by-step
-        script = f"""
-// TagUI script to log in to MoneyMonk
-{creds["url"]}
-wait 2 seconds // Wait for page load
+        with playwright_context(headless=headless) as page:
+            logger.debug(f"Navigating to {creds['url']}")
+            page.goto(creds["url"])
 
-// Enter credentials
-type #email as {creds["username"]}
-type #password as {creds["password"]}
-click button[data-testid="button"]
-wait 2 seconds // Wait for potential redirect or TOTP page load
+            logger.debug("Waiting for login form elements.")
+            page.wait_for_selector("#email", state="visible")
+            page.wait_for_selector("#password", state="visible")
+            page.wait_for_selector("button[data-testid='button']", state="visible")
 
-// Check if TOTP is needed (presence of #code field)
-present #code
-if result == true {{
-    echo 'TOTP code entry required.'
-    type #code as {totp_code}
-    click button[data-testid="button"]
-    wait 2 seconds // Wait for post-TOTP login
-}} else {{
-    echo 'TOTP code entry not required or element not found.'
-}}
+            logger.debug("Entering credentials...")
+            page.fill("#email", creds["username"])
+            page.fill("#password", creds["password"])
 
-// Basic check for successful login (e.g., check URL or presence of a dashboard element)
-// Replace '#dashboard-element' with an actual selector from the MoneyMonk dashboard
-present #dashboard-element
-if result == true {{
-    echo 'Login successful (dashboard element found).'
-}} else {{
-    echo 'Login potentially failed (dashboard element not found).'
-    // Consider adding 'fail' step here to make TagUI exit with error code
-    // fail
-}}
-"""
-        logger.debug("Constructed TagUI login script.")
-        return _run_tagui_script(script, "moneymonk_login")
+            logger.debug("Clicking login button...")
+            page.click("button[data-testid='button']")
+
+            # Wait for potential navigation or TOTP page load
+            page.wait_for_load_state("networkidle", timeout=10000) # Wait max 10s for network idle
+
+            # Check if TOTP is needed
+            # Use page.is_visible() for a non-blocking check
+            if page.is_visible("#code"):
+                logger.info("TOTP code entry required.")
+                page.fill("#code", totp_code)
+                logger.debug("Clicking submit button after TOTP...")
+                page.click("button[data-testid='button']")
+                page.wait_for_load_state("networkidle", timeout=15000) # Wait longer after TOTP
+            else:
+                logger.info("TOTP code entry not required or element not found.")
+
+            # Basic check for successful login
+            # Replace '#dashboard-element' with a reliable selector from the MoneyMonk dashboard
+            # Example: Check if the URL contains '/dashboard' or a specific element exists
+            dashboard_selector = "nav a[href*='/dashboard']" # Example selector
+            try:
+                page.wait_for_selector(dashboard_selector, state="visible", timeout=10000)
+                logger.info("Login successful (dashboard element found).")
+                return True
+            except PlaywrightTimeoutError:
+                logger.error("Login potentially failed (dashboard element not found after timeout).")
+                # Capture screenshot on failure for debugging
+                screenshot_path = Path("~/.Djin/logs/login_failure.png").expanduser()
+                screenshot_path.parent.mkdir(parents=True, exist_ok=True)
+                page.screenshot(path=str(screenshot_path))
+                logger.error(f"Screenshot saved to {screenshot_path}")
+                raise MoneyMonkError("Login failed: Could not verify dashboard access.")
 
     except (ConfigurationError, MoneyMonkError) as e:
-        # Log already happened in helper or here
         logger.error(f"MoneyMonk login failed: {e}")
-        raise  # Re-raise the specific error
+        raise
+    except PlaywrightTimeoutError as e:
+        logger.error(f"Playwright operation timed out during login: {e}")
+        raise MoneyMonkError(f"Operation timed out during login: {e}")
+    except PlaywrightError as e:
+        logger.error(f"A Playwright error occurred during login: {e}")
+        raise MoneyMonkError(f"A browser automation error occurred during login: {e}")
     except Exception as e:
         logger.error(f"An unexpected error occurred during MoneyMonk login: {e}", exc_info=True)
         raise MoneyMonkError(f"An unexpected error during login: {str(e)}")
 
 
-# Placeholder function - Implement actual TagUI interaction here
-def register_hours_on_website(date: str, description: str, hours: float) -> bool:
+def register_hours_on_website(date: str, description: str, hours: float, headless=True) -> bool:
     """
-    Uses TagUI (or another automation tool) to register hours on the target website.
+    Uses Playwright to register hours on the MoneyMonk website.
 
     Args:
-        date: The date for the hour registration (e.g., "YYYY-MM-DD").
+        date: The date for the hour registration (YYYY-MM-DD).
         description: The description of the work performed.
         hours: The number of hours to register.
+        headless: Run the browser in headless mode (default True).
 
     Returns:
-        True if registration was successful, False otherwise.
+        True if registration was successful.
 
     Raises:
-        NotImplementedError: This is a placeholder.
+        ConfigurationError: If credentials are not configured.
+        MoneyMonkError: If registration fails.
     """
-    logger.info(f"Attempting to register {hours} hours for {date} with description: '{description}'")
-    # TODO: Implement the actual TagUI automation script execution
-    # Example steps:
-    # 1. Launch browser to the specific website (e.g., MoneyMonk)
-    # 2. Log in (handle credentials securely)
-    # 3. Navigate to the hour registration page
-    # 4. Fill in the date, description, and hours
-    # 5. Submit the form
-    # 6. Check for success confirmation
-    logger.warning("TagUI interaction for register_hours_on_website is not implemented yet.")
-    raise NotImplementedError("TagUI interaction for register_hours_on_website needs implementation.")
-    # return True # Or False based on actual result
+    logger.info(f"Attempting to register {hours} hours for {date} via Playwright (headless={headless})...")
+    # Note: This assumes login happens implicitly or is handled separately.
+    # A robust implementation might call login_to_moneymonk first or handle sessions.
+    # For simplicity, we'll assume the user is logged in or the login function
+    # establishes a persistent session if run in the same script execution.
+    # A better approach would be to pass the 'page' object from login if needed.
+
+    # --- THIS IS A PLACEHOLDER IMPLEMENTATION ---
+    # The exact selectors and workflow depend heavily on MoneyMonk's actual UI.
+    # You will need to inspect the MoneyMonk hour registration page
+    # using browser developer tools to find the correct selectors.
+
+    try:
+        creds = _get_moneymonk_credentials() # Needed for URL at least
+
+        with playwright_context(headless=headless) as page:
+            # 1. Login (Required before registering hours)
+            #    We call the login function here to ensure we are logged in.
+            #    This creates a new browser instance per operation, which is less efficient
+            #    but simpler than managing shared browser state.
+            logger.info("Ensuring login before registering hours...")
+            login_success = login_to_moneymonk(headless=headless) # Reuse the login function
+            if not login_success:
+                 # The login function already raises MoneyMonkError on failure
+                 # but we add an explicit check here for clarity.
+                 raise MoneyMonkError("Login failed, cannot register hours.")
+            logger.info("Login confirmed.")
+
+
+            # 2. Navigate to the hour registration page
+            #    Replace with the actual URL or navigation steps
+            registration_url = f"{creds['url']}/path/to/hour/registration" # <-- Replace this URL
+            logger.debug(f"Navigating to hour registration page: {registration_url}")
+            page.goto(registration_url)
+            page.wait_for_load_state("networkidle")
+
+            # 3. Fill in the form
+            #    Replace selectors with actual ones from MoneyMonk
+            date_selector = "#date-input" # <-- Replace selector
+            desc_selector = "#description-textarea" # <-- Replace selector
+            hours_selector = "#hours-input" # <-- Replace selector
+            project_selector = "#project-dropdown" # <-- Replace selector (if needed)
+            submit_button_selector = "button[type='submit']" # <-- Replace selector
+
+            logger.debug("Waiting for registration form elements.")
+            page.wait_for_selector(date_selector, state="visible")
+            page.wait_for_selector(desc_selector, state="visible")
+            page.wait_for_selector(hours_selector, state="visible")
+            # page.wait_for_selector(project_selector, state="visible") # If needed
+            page.wait_for_selector(submit_button_selector, state="visible")
+
+            logger.debug("Filling registration form...")
+            page.fill(date_selector, date) # Assumes YYYY-MM-DD format is accepted directly
+            page.fill(desc_selector, description)
+            page.fill(hours_selector, str(hours)) # Convert hours to string for input field
+
+            # Handle project selection if necessary (example)
+            # project_name = "Your Project Name" # <-- Get this dynamically if needed
+            # page.select_option(project_selector, label=project_name)
+
+            # 4. Submit the form
+            logger.debug("Submitting hour registration form...")
+            page.click(submit_button_selector)
+
+            # 5. Check for success confirmation
+            #    Replace with actual success indicator (e.g., a success message, URL change)
+            success_indicator_selector = ".alert-success" # <-- Replace selector
+            try:
+                page.wait_for_selector(success_indicator_selector, state="visible", timeout=15000)
+                success_message = page.text_content(success_indicator_selector)
+                logger.info(f"Hour registration successful. Confirmation: '{success_message}'")
+                return True
+            except PlaywrightTimeoutError:
+                logger.error("Hour registration failed (success indicator not found).")
+                # Capture screenshot on failure
+                screenshot_path = Path("~/.Djin/logs/registration_failure.png").expanduser()
+                screenshot_path.parent.mkdir(parents=True, exist_ok=True)
+                page.screenshot(path=str(screenshot_path))
+                logger.error(f"Screenshot saved to {screenshot_path}")
+                raise MoneyMonkError("Hour registration failed: Confirmation not found.")
+
+    except (ConfigurationError, MoneyMonkError) as e:
+        logger.error(f"MoneyMonk hour registration failed: {e}")
+        raise
+    except PlaywrightTimeoutError as e:
+        logger.error(f"Playwright operation timed out during registration: {e}")
+        raise MoneyMonkError(f"Operation timed out during registration: {e}")
+    except PlaywrightError as e:
+        logger.error(f"A Playwright error occurred during registration: {e}")
+        raise MoneyMonkError(f"A browser automation error occurred during registration: {e}")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred during hour registration: {e}", exc_info=True)
+        raise MoneyMonkError(f"An unexpected error during hour registration: {str(e)}")

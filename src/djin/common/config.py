@@ -33,9 +33,7 @@ DEFAULT_CONFIG = {
         "password": "",     # Will be stored in keyring
         "totp_secret": "",  # Will be stored in keyring
     },
-    "tagui": {
-        "path": "tagui" # Default command name, assumes it's in PATH
-    }
+    # Removed TagUI config section
 }
 
 
@@ -67,11 +65,7 @@ def load_config():
         config["jira"]["username"] = os.getenv("Djin_JIRA_USERNAME")
     if os.getenv("Djin_MONEYMONK_USERNAME"):
         config["moneymonk"]["username"] = os.getenv("Djin_MONEYMONK_USERNAME")
-    if os.getenv("Djin_TAGUI_PATH"):
-        # Ensure the 'tagui' key exists before trying to set 'path'
-        if "tagui" not in config:
-            config["tagui"] = {}
-        config["tagui"]["path"] = os.getenv("Djin_TAGUI_PATH")
+    # Removed TAGUI_PATH environment variable check
 
 
     # Load secrets from keyring
@@ -171,12 +165,7 @@ def setup_config():
         if new_totp:
             config["moneymonk"]["totp_secret"] = new_totp
 
-    # TagUI configuration
-    console.print("\n[bold]TagUI Configuration[/bold]")
-    # Ensure 'tagui' key exists before accessing 'path'
-    current_tagui_path = config.get("tagui", {}).get("path", "tagui")
-    config["tagui"]["path"] = input(f"TagUI Executable Path or Command [{current_tagui_path}]: ") or current_tagui_path
-
+    # Removed TagUI configuration section
 
     # Save the updated configuration
     save_config(config)

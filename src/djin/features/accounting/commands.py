@@ -9,7 +9,8 @@ from rich.console import Console
 
 from djin.cli.commands import register_command
 from djin.common.errors import DjinError, MoneyMonkError, ConfigurationError, handle_error # Added MoneyMonkError, ConfigurationError
-from djin.features.accounting.tagui_client import login_to_moneymonk # Import the login function
+# Import from the new playwright client
+from djin.features.accounting.playwright_client import login_to_moneymonk
 
 # Import the API to interact with the agent/workflow
 from djin.features.accounting.api import get_accounting_api
@@ -22,21 +23,25 @@ console = Console()
 # --- Command Handlers ---
 
 def login_command(args: List[str]) -> bool:
-    """Test the MoneyMonk login process using TagUI."""
+    """Test the MoneyMonk login process using Playwright."""
     logger.info("Received accounting login command.")
-    console.print("[cyan]Attempting to log in to MoneyMonk via TagUI...[/cyan]")
+    # Determine if headless mode should be disabled (e.g., for debugging)
+    headless = "--no-headless" not in args
+    console.print(f"[cyan]Attempting to log in to MoneyMonk via Playwright (headless={headless})...[/cyan]")
     try:
-        success = login_to_moneymonk()
+        # Pass headless argument to the login function
+        success = login_to_moneymonk(headless=headless)
         if success:
-            console.print("[green]MoneyMonk login successful (based on TagUI script execution).[/green]")
+            # The login function now raises errors on failure, so reaching here means success.
+            console.print("[green]MoneyMonk login successful (verified dashboard access).[/green]")
             return True
         else:
-            # _run_tagui_script might return False if output suggests failure but exit code was 0
-            console.print("[yellow]MoneyMonk login script finished, but may have failed (check TagUI output/logs).[/yellow]")
+            # This case should ideally not be reached if login_to_moneymonk raises errors properly.
+            console.print("[yellow]MoneyMonk login function returned False unexpectedly.[/yellow]")
             return False
     except (ConfigurationError, MoneyMonkError) as e:
-        # Handle specific errors related to config or TagUI execution
-        handle_error(e)
+        # Handle specific errors related to config or Playwright execution
+        handle_error(e) # display_error is called within handle_error
         return False
     except Exception as e:
         # Handle unexpected errors
@@ -93,11 +98,11 @@ def register_accounting_commands():
     commands_to_register = {
         "accounting register-hours": (
             register_hours_command,
-            "Register hours on external platform (Usage: /accounting register-hours YYYY-MM-DD hours description)",
+            "Register hours on MoneyMonk (Usage: /accounting register-hours YYYY-MM-DD hours description)",
         ),
         "accounting login": (
             login_command,
-            "Test the login process for MoneyMonk using TagUI.",
+            "Test the login process for MoneyMonk using Playwright. Add --no-headless to watch.",
         ),
         # Add other accounting commands here
     }
