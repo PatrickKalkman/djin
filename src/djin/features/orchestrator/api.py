@@ -4,7 +4,7 @@ Public API for the orchestrator agent.
 This module provides a public interface for other agents to call the orchestrator agent.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from djin.features.orchestrator.agent import OrchestratorAgent
 
@@ -36,3 +36,16 @@ class OrchestratorAPI:
             Dict[str, Any]: Overview of tasks
         """
         return self._agent.get_task_overview()
+        
+    def register_time_with_summary(self, date_str: Optional[str] = None, hours: float = 8.0) -> Dict[str, Any]:
+        """
+        Generate a work summary and register hours.
+        
+        Args:
+            date_str: Optional date string in YYYY-MM-DD format (defaults to today)
+            hours: Number of hours to register (defaults to 8.0)
+            
+        Returns:
+            Dict with summary, registration result, and success status
+        """
+        return self._agent.register_time_with_summary(date_str, hours)
