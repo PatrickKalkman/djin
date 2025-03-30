@@ -76,7 +76,7 @@ class TaskAPI:
             issue_key: The Jira issue key (e.g., PROJ-123)
 
         Returns:
-            str: Formatted output of task details
+            str: Formatted output of task details or error message.
         """
         return self._agent.process_task_details_request(issue_key)
 

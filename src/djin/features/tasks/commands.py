@@ -132,67 +132,64 @@ def completed_command(args):
 def task_details_command(args):
     """Show details for a specific Jira issue."""
     try:
-        # Use the API layer to get the tasks agent
         from djin.features.tasks.api import get_tasks_api
-
-        # Get the tasks API
         tasks_api = get_tasks_api()
 
-        # Check if issue key is provided
         if not args or len(args) == 0:
             console.print("[red]Error: Please provide a Jira issue key (e.g., /tasks PROJ-123)[/red]")
             return False
 
-        # Get the issue key from args
         issue_key = args[0]
+        # API method returns the formatted string directly (or error string)
+        result_output = tasks_api.get_task_details(issue_key)
 
-        # Call the API method to get task details
-        result = tasks_api.get_task_details(issue_key)
+        console.print(result_output)
+        # Success if the output doesn't start with typical error indicators
+        return not result_output.strip().startswith("[red]")
 
-        # Return the result
-        return result
+    except DjinError as e:
+        # Handle Djin specific errors if the API call itself fails before returning string
+        handle_error(e)
+        return False
     except Exception as e:
-        console.print(f"[red]Error showing task details: {str(e)}[/red]")
+        logger.error(f"Unexpected error in task-details command: {e}", exc_info=True)
+        console.print(f"[bold red]An unexpected error occurred.[/bold red]")
         return False
 
-
-def set_task_status_command(args):
+def set_task_status_command(args: List[str]) -> bool:
     """Transition a Jira issue to a new status."""
     try:
-        # Use the API layer to get the tasks agent
         from djin.features.tasks.api import get_tasks_api
-
-        # Get the tasks API
         tasks_api = get_tasks_api()
 
-        # Check arguments
         if len(args) < 2:
             console.print(
                 "[red]Error: Please provide a Jira issue key and the target status (e.g., /tasks set-status PROJ-123 'In Progress')[/red]"
             )
-            return False  # Indicate command failure
+            return False
 
         issue_key = args[0]
-        # Join remaining args in case status has spaces (e.g., "In Progress")
         status_name = " ".join(args[1:])
 
-        # Call the API method to set task status
-        result = tasks_api.set_task_status(issue_key, status_name)
+        # API method returns the formatted result string (success or error)
+        result_output = tasks_api.set_task_status(issue_key, status_name)
 
-        # The result is already printed by the agent, no need to print it again
-        # Determine success based on the result string (simple check)
-        return "[green]" in result
+        console.print(result_output)
+        # Determine success based on the result string
+        return "[green]" in result_output
 
+    except DjinError as e:
+         # Handle Djin specific errors if the API call itself fails before returning string
+        handle_error(e)
+        return False
     except Exception as e:
-        # Catch unexpected errors during API call or argument parsing
+        # Catch unexpected errors during argument parsing or API call
+        logger.error(f"Unexpected error in set-status command: {e}", exc_info=True)
         handle_error(JiraError(f"An unexpected error occurred in the command: {str(e)}"))
-        return False  # Indicate command failure
-
+        return False
 
 # --- Registration Function ---
-
-logger = logging.getLogger("djin.tasks.commands")  # Ensure logger is defined for registration
-
+# logger is already defined at module level
 
 def register_task_commands():
     """Registers all commands related to the tasks feature."""
@@ -201,7 +198,7 @@ def register_task_commands():
         "tasks active": (active_command, "Show all your active Jira issues"),
         "tasks worked-on": (
             worked_on_command,
-            "Show Jira issues you worked on for a specific date (default: today)",
+            "Show Jira issues you worked on for a specific date (YYYY-MM-DD, default: today)",
         ),
         "tasks completed": (
             completed_command,
@@ -222,4 +219,4 @@ def register_task_commands():
 
 
 # --- Remove Module-Level Side Effects ---
-# The register_command calls below are now moved into the function above.
+# Registration is handled by the function above.
