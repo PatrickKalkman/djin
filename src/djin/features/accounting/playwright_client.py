@@ -223,14 +223,15 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             # --- 3. Fill and Submit Time Entry Form ---
             logger.info("Attempting to fill and submit time entry form...")
 
-            # Selectors based on correct implementation
+            # Selectors based on correct implementation from login_command
             add_entry_button = "button:has-text('Add time entry')"
             # Modal selectors
-            hours_selector = "input#time"  # Time input field
-            desc_selector = "input#description"  # Description input field
-            project_dropdown_trigger = 'div.react-select__control'  # Dropdown trigger
+            time_input = "input#time"  # Selector for the time input field
+            desc_selector = "input#description"  # Selector for description (updated based on HTML)
+            project_dropdown_trigger = 'div.react-select__control'  # More specific selector for dropdown trigger
             project_option_selector_base = 'div[class*="react-select__option"]'  # Base selector for options
             project_name_to_select = "AION Titan Streaming PI"  # The specific project name (for verification)
+            specific_project_option_selector = f"{project_option_selector_base}:has-text('{project_name_to_select}')"  # Fallback selector
             selected_project_value_selector = 'div[class*="react-select__single-value"]'  # Selector for chosen project display
             submit_button_selector = "button[data-testid='button']:has-text('Toevoegen')"  # Submit button
 
@@ -238,11 +239,11 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             if page.is_visible(add_entry_button):
                 logger.debug("Clicking 'Add time entry' button...")
                 page.click(add_entry_button)
-                page.wait_for_timeout(1500)  # Wait for modal animation
+                page.wait_for_timeout(1000)  # Wait for modal animation
             else:
                 logger.warning("'Add time entry' button not found. Assuming modal is already open or not needed.")
                 # Check if form fields are directly visible
-                if not page.is_visible(hours_selector):
+                if not page.is_visible(time_input):
                     error_msg = "Cannot find 'Add time entry' button or time input field. Cannot proceed."
                     logger.error(error_msg)
                     screenshot_path = Path("~/.Djin/logs/add_entry_button_missing.png").expanduser()
@@ -253,7 +254,7 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             # Wait for modal form elements
             try:
                 logger.debug("Waiting for form elements in modal...")
-                page.wait_for_selector(hours_selector, state="visible", timeout=5000)
+                page.wait_for_selector(time_input, state="visible", timeout=5000)
                 page.wait_for_selector(desc_selector, state="visible", timeout=5000)
                 page.wait_for_selector(project_dropdown_trigger, state="visible", timeout=5000)
                 page.wait_for_selector(submit_button_selector, state="visible", timeout=5000)
@@ -268,20 +269,20 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
 
             # Fill hours
             logger.debug(f"Filling hours: {hours}")
-            page.fill(hours_selector, str(hours))
+            page.fill(time_input, str(hours))
 
             # Fill description
             logger.debug(f"Filling description: {description}")
             page.fill(desc_selector, description)
 
-            # Select project (selecting the second option as per correct logic)
+            # Select project by selecting the second option in the dropdown
             logger.debug("Selecting project by choosing the second option in dropdown")
             logger.debug(f"Clicking project dropdown trigger: {project_dropdown_trigger}")
             page.click(project_dropdown_trigger)
             
             # Wait for dropdown options to appear
             logger.debug("Waiting for dropdown options to appear")
-            page.wait_for_selector(project_option_selector_base, state="visible", timeout=5000)
+            page.wait_for_selector(project_option_selector_base, state='visible', timeout=5000)
             
             # Get all options and select the second one (index 1)
             logger.debug("Selecting the second option from dropdown")
@@ -296,7 +297,6 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             else:
                 logger.warning(f"Not enough options found in dropdown (found {len(all_options)})")
                 # Fallback: try to click the first option that contains our target text
-                specific_project_option_selector = f"{project_option_selector_base}:has-text('{project_name_to_select}')"
                 logger.debug(f"Falling back to text search for '{project_name_to_select}'")
                 try:
                     page.click(specific_project_option_selector)
@@ -317,9 +317,12 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
                 page.wait_for_selector(f"{selected_project_value_selector}:has-text('{project_name_to_select}')", timeout=3000)
                 selected_value = page.text_content(selected_project_value_selector, timeout=1000)
                 logger.info(f"Selected project verified: {selected_value}")
+                # Optional: More robust check if needed
+                # if project_name_to_select not in selected_value:
+                #     logger.warning(f"Selected project text '{selected_value}' does not exactly match '{project_name_to_select}'")
             except PlaywrightTimeoutError:
                 selected_value_now = page.text_content(selected_project_value_selector, timeout=500)  # Get current value if wait failed
-                logger.warning(f"Verification failed: Could not find '{project_name_to_select}' in selected value element. Current value: '{selected_value_now}'")
+                logger.warning(f"Verification failed: Could not find '{project_name_to_select}' in selected value element '{selected_project_value_selector}'. Current value: '{selected_value_now}'")
                 # Take a screenshot for debugging
                 screenshot_path = Path("~/.Djin/logs/project_selection_verification_failed.png").expanduser()
                 page.screenshot(path=str(screenshot_path))
