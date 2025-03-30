@@ -6,6 +6,9 @@ from pathlib import Path
 from typing import List
 
 from loguru import logger  # Import Loguru logger
+
+# Import the API to interact with the agent/workflow
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError  # Import the specific exception
 from rich.console import Console
 
 from djin.cli.commands import register_command
@@ -15,10 +18,6 @@ from djin.common.errors import (  # Added MoneyMonkError, ConfigurationError
     MoneyMonkError,
     handle_error,
 )
-
-# Import the API to interact with the agent/workflow
-from playwright.sync_api import TimeoutError as PlaywrightTimeoutError # Import the specific exception
-
 from djin.features.accounting.api import get_accounting_api
 
 # Import from the new playwright client
@@ -32,8 +31,6 @@ console = Console()
 # --- Command Handlers ---
 
 
-from rich.prompt import Prompt # Import Prompt for better argument handling if needed
-
 def login_command(args: List[str]) -> bool:
     """
     Test MoneyMonk login, navigate to time entry page, and pre-fill form fields.
@@ -45,7 +42,7 @@ def login_command(args: List[str]) -> bool:
     # --- Argument Parsing ---
     headless = "--headless" in args
     if headless:
-        args.remove("--headless") # Remove flag so it doesn't interfere
+        args.remove("--headless")  # Remove flag so it doesn't interfere
 
     date_str = None
     date_arg_index = -1
@@ -55,6 +52,7 @@ def login_command(args: List[str]) -> bool:
                 date_str = arg.split("=")[1]
                 # Basic validation
                 from datetime import datetime
+
                 datetime.strptime(date_str, "%Y-%m-%d")
                 date_arg_index = i
                 break
@@ -69,6 +67,7 @@ def login_command(args: List[str]) -> bool:
     # If no date provided, use today's date
     if not date_str:
         from datetime import datetime
+
         date_str = datetime.now().strftime("%Y-%m-%d")
         logger.info(f"No date provided, using today's date: {date_str}")
 
@@ -182,13 +181,17 @@ def login_command(args: List[str]) -> bool:
             console.print(f"[green]Screenshot saved to: {screenshot_path}[/green]")
 
             # --- Form Interaction ---
-            time_input = "input#time" # Selector for the time input field
-            desc_selector = "input#description" # Selector for description (updated based on HTML)
-            project_dropdown_trigger = 'div.react-select__control' # More specific selector for dropdown trigger
-            project_option_selector_base = 'div[class*="react-select__option"]' # Base selector for options
-            project_name_to_select = "AION Titan Streaming PI" # The specific project name (for verification)
-            specific_project_option_selector = f"{project_option_selector_base}:has-text('{project_name_to_select}')" # Fallback selector
-            selected_project_value_selector = 'div[class*="react-select__single-value"]' # Selector for chosen project display
+            time_input = "input#time"  # Selector for the time input field
+            desc_selector = "input#description"  # Selector for description (updated based on HTML)
+            project_dropdown_trigger = "div.react-select__control"  # More specific selector for dropdown trigger
+            project_option_selector_base = 'div[class*="react-select__option"]'  # Base selector for options
+            project_name_to_select = "AION Titan Streaming PI"  # The specific project name (for verification)
+            specific_project_option_selector = (
+                f"{project_option_selector_base}:has-text('{project_name_to_select}')"  # Fallback selector
+            )
+            selected_project_value_selector = (
+                'div[class*="react-select__single-value"]'  # Selector for chosen project display
+            )
 
             if page.is_visible(time_input):
                 console.print("[green]Time entry page loaded successfully (time input field visible).[/green]")
@@ -200,7 +203,7 @@ def login_command(args: List[str]) -> bool:
                     if page.is_visible(add_entry_button):
                         logger.debug("Clicking 'Add time entry' button...")
                         page.click(add_entry_button)
-                        page.wait_for_timeout(1000) # Wait for modal
+                        page.wait_for_timeout(1000)  # Wait for modal
 
                     # Fill hours
                     logger.debug(f"Filling hours: {hours_str}")
@@ -214,16 +217,16 @@ def login_command(args: List[str]) -> bool:
                     logger.debug("Selecting project by choosing the second option in dropdown")
                     logger.debug(f"Clicking project dropdown trigger: {project_dropdown_trigger}")
                     page.click(project_dropdown_trigger)
-                    
+
                     # Wait for dropdown options to appear
                     logger.debug("Waiting for dropdown options to appear")
-                    page.wait_for_selector(project_option_selector_base, state='visible', timeout=5000)
-                    
+                    page.wait_for_selector(project_option_selector_base, state="visible", timeout=5000)
+
                     # Get all options and select the second one (index 1)
                     logger.debug("Selecting the second option from dropdown")
                     # Wait a moment for all options to be fully loaded
                     page.wait_for_timeout(500)
-                    
+
                     # Select the second option (index 1, since indexing starts at 0)
                     all_options = page.query_selector_all(project_option_selector_base)
                     if len(all_options) >= 2:
@@ -237,18 +240,24 @@ def login_command(args: List[str]) -> bool:
 
                     # Verify project selection
                     logger.debug(f"Verifying selection using selector: {selected_project_value_selector}")
-                    page.wait_for_timeout(500) # Short wait for value to update
+                    page.wait_for_timeout(500)  # Short wait for value to update
                     try:
                         # Wait for the selected value element to contain the project name
-                        page.wait_for_selector(f"{selected_project_value_selector}:has-text('{project_name_to_select}')", timeout=3000)
+                        page.wait_for_selector(
+                            f"{selected_project_value_selector}:has-text('{project_name_to_select}')", timeout=3000
+                        )
                         selected_value = page.text_content(selected_project_value_selector, timeout=1000)
                         logger.info(f"Selected project verified: {selected_value}")
                         # Optional: More robust check if needed
                         # if project_name_to_select not in selected_value:
                         #     logger.warning(f"Selected project text '{selected_value}' does not exactly match '{project_name_to_select}'")
                     except PlaywrightTimeoutError:
-                        selected_value_now = page.text_content(selected_project_value_selector, timeout=500) # Get current value if wait failed
-                        logger.warning(f"Verification failed: Could not find '{project_name_to_select}' in selected value element '{selected_project_value_selector}'. Current value: '{selected_value_now}'")
+                        selected_value_now = page.text_content(
+                            selected_project_value_selector, timeout=500
+                        )  # Get current value if wait failed
+                        logger.warning(
+                            f"Verification failed: Could not find '{project_name_to_select}' in selected value element '{selected_project_value_selector}'. Current value: '{selected_value_now}'"
+                        )
                         # Consider taking a screenshot here for debugging
                         screenshot_path = Path("~/.Djin/logs/project_selection_verification_failed.png").expanduser()
                         page.screenshot(path=str(screenshot_path))
@@ -256,19 +265,18 @@ def login_command(args: List[str]) -> bool:
                         # Decide if this should be a hard failure or just a warning
                         # return False # Uncomment to make it a hard failure
 
-
                     console.print("[green]Form fields pre-filled successfully.[/green]")
                     console.print("[cyan]Waiting 1 second before submitting form...[/cyan]")
-                    page.wait_for_timeout(1000) # Wait before submitting
-                    
+                    page.wait_for_timeout(1000)  # Wait before submitting
+
                     # Submit the form by clicking the "Toevoegen" button
                     submit_button_selector = "button[data-testid='button']:has-text('Toevoegen')"
                     logger.debug(f"Clicking submit button: {submit_button_selector}")
                     page.click(submit_button_selector)
-                    
+
                     console.print("[green]Form submitted successfully.[/green]")
                     console.print("[cyan]Waiting 1 second for visual confirmation...[/cyan]")
-                    page.wait_for_timeout(1000) # Wait after submission for visual confirmation
+                    page.wait_for_timeout(1000)  # Wait after submission for visual confirmation
 
                 except PlaywrightTimeoutError as pte:
                     logger.error(f"Timeout error during form filling: {pte}")
