@@ -30,6 +30,7 @@ DEFAULT_CONFIG = {
     "moneymonk": {
         "url": "https://moneymonk.com",
         "username": "",
+        "password": "",     # Will be stored in keyring
         "totp_secret": "",  # Will be stored in keyring
     },
 }
@@ -71,7 +72,15 @@ def load_config():
             config["jira"]["api_token"] = api_token
 
     if config["moneymonk"]["username"]:
-        totp_secret = keyring.get_password(SERVICE_NAME, f"moneymonk_totp_{config['moneymonk']['username']}")
+        # Load MoneyMonk password from keyring
+        password_key = f"moneymonk_password_{config['moneymonk']['username']}"
+        password = keyring.get_password(SERVICE_NAME, password_key)
+        if password:
+            config["moneymonk"]["password"] = password
+
+        # Load MoneyMonk TOTP secret from keyring
+        totp_key = f"moneymonk_totp_{config['moneymonk']['username']}"
+        totp_secret = keyring.get_password(SERVICE_NAME, totp_key)
         if totp_secret:
             config["moneymonk"]["totp_secret"] = totp_secret
 
@@ -96,7 +105,18 @@ def save_config(config):
     else:
         safe_config = config.copy()
 
-    if config["moneymonk"]["username"] and config["moneymonk"]["totp_secret"]:
+    # Save MoneyMonk password to keyring
+    if config["moneymonk"]["username"] and config["moneymonk"].get("password"):
+        keyring.set_password(
+            SERVICE_NAME,
+            f"moneymonk_password_{config['moneymonk']['username']}",
+            config["moneymonk"]["password"],
+        )
+        # Don't store password in config file
+        safe_config["moneymonk"]["password"] = ""
+
+    # Save MoneyMonk TOTP secret to keyring
+    if config["moneymonk"]["username"] and config["moneymonk"].get("totp_secret"):
         keyring.set_password(
             SERVICE_NAME,
             f"moneymonk_totp_{config['moneymonk']['username']}",
@@ -134,6 +154,10 @@ def setup_config():
     )
 
     if config["moneymonk"]["username"]:
+        new_password = input("MoneyMonk Password (leave empty to keep existing): ")
+        if new_password:
+            config["moneymonk"]["password"] = new_password
+
         new_totp = input("MoneyMonk TOTP Secret (leave empty to keep existing): ")
         if new_totp:
             config["moneymonk"]["totp_secret"] = new_totp
@@ -158,9 +182,17 @@ def is_configured():
     )
 
     # Check MoneyMonk configuration
-    moneymonk_configured = config["moneymonk"]["username"] and (
-        config["moneymonk"]["totp_secret"]
-        or keyring.get_password(SERVICE_NAME, f"moneymonk_totp_{config['moneymonk']['username']}")
+    moneymonk_user = config["moneymonk"]["username"]
+    moneymonk_configured = (
+        moneymonk_user
+        and (
+            config["moneymonk"].get("password") # Check if loaded into config
+            or keyring.get_password(SERVICE_NAME, f"moneymonk_password_{moneymonk_user}") # Check keyring directly
+        )
+        and (
+            config["moneymonk"].get("totp_secret") # Check if loaded into config
+            or keyring.get_password(SERVICE_NAME, f"moneymonk_totp_{moneymonk_user}") # Check keyring directly
+        )
     )
 
     return jira_configured and moneymonk_configured
