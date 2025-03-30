@@ -100,12 +100,6 @@ def summarize_titles_command(args):
 def register_textsynth_commands():
     """Registers all commands related to the textsynth feature."""
     commands_to_register = {
-        "report daily": (daily_report_command, "Generate a daily report of your tasks"),
-        "report weekly": (weekly_report_command, "Generate a weekly report of your tasks"),
-        "report custom": (
-            custom_report_command,
-            "Generate a custom report of your tasks. Optional: specify number of days to look back (default: 7)",
-        ),
         "summarize": (
             summarize_titles_command,
             "Summarize multiple Jira issue titles. Usage: /summarize 'Title 1' 'Title 2' ...",
