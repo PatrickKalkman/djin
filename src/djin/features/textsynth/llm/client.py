@@ -5,9 +5,10 @@ This module provides a client for interacting with LLMs for report-related opera
 and text synthesis.
 """
 
-import logging
 import os
 from typing import List
+
+from loguru import logger # Import Loguru logger
 
 from dotenv import load_dotenv
 from langchain_core.prompts import PromptTemplate
@@ -19,8 +20,7 @@ from djin.features.textsynth.llm.prompts import SUMMARIZE_TITLES_PROMPT
 # Load environment variables from .env file
 load_dotenv()
 
-# Set up logging
-logger = logging.getLogger("djin.textsynth.llm")
+# Loguru logger is imported directly, no need for getLogger
 
 
 class TextSynthLLMClient:

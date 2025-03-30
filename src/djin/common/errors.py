@@ -2,28 +2,22 @@
 Custom exceptions and error handling for Djin.
 """
 
-import logging
 import pathlib
 import sys
 import time
-import traceback
+import traceback # Keep for formatting exceptions if needed, though Loguru handles it well
 
+from loguru import logger # Import Loguru's logger
 from rich.console import Console
 from rich.panel import Panel
 
-# Set up logging
-logger = logging.getLogger("djin")
-log_dir = pathlib.Path("~/.Djin").expanduser()
-log_dir.mkdir(exist_ok=True, parents=True)
-log_file = log_dir / "djin.log"
-handler = logging.FileHandler(log_file)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
-
+# Loguru is configured in main.py now
 # Create console for rich output
 console = Console()
+
+# Define log directory (can be used by Loguru config)
+LOG_DIR = pathlib.Path("~/.Djin").expanduser()
+LOG_FILE = LOG_DIR / "djin.log"
 
 
 class DjinError(Exception):
@@ -62,11 +56,15 @@ class MoneyMonkError(DjinError):
     pass
 
 
-def log_error(error, level=logging.ERROR):
-    """Log an error to the log file."""
-    logger.log(level, str(error))
+def log_error(error, level="ERROR"):
+    """Log an error using Loguru."""
+    # Loguru uses string levels like "ERROR", "WARNING", "INFO", "DEBUG"
     if isinstance(error, Exception):
-        logger.log(level, traceback.format_exc())
+        # logger.exception automatically includes traceback info
+        logger.opt(exception=error).log(level, str(error))
+    else:
+        # Log non-exception errors without traceback
+        logger.log(level, str(error))
 
 
 def display_error(error, title="Error"):
