@@ -2,6 +2,7 @@
 Command handlers for Jira task management.
 """
 
+import logging # Add logging import
 from rich.console import Console
 
 from djin.cli.commands import register_command
