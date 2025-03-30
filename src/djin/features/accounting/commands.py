@@ -30,27 +30,68 @@ console = Console()
 # --- Command Handlers ---
 
 
+from rich.prompt import Prompt # Import Prompt for better argument handling if needed
+
 def login_command(args: List[str]) -> bool:
-    """Test the MoneyMonk login process and navigate to time registration page."""
-    logger.info("Received accounting login command.")
+    """
+    Test MoneyMonk login, navigate to time entry page, and pre-fill form fields.
 
-    # Parse arguments
+    Usage: /accounting login <hours> <description> [--headless] [--date=YYYY-MM-DD]
+    """
+    logger.info(f"Received accounting login command with args: {args}")
+
+    # --- Argument Parsing ---
     headless = "--headless" in args
+    if headless:
+        args.remove("--headless") # Remove flag so it doesn't interfere
 
-    # Check if a date parameter was provided
     date_str = None
-    for arg in args:
+    date_arg_index = -1
+    for i, arg in enumerate(args):
         if arg.startswith("--date="):
-            date_str = arg.split("=")[1]
-            break
+            try:
+                date_str = arg.split("=")[1]
+                # Basic validation
+                from datetime import datetime
+                datetime.strptime(date_str, "%Y-%m-%d")
+                date_arg_index = i
+                break
+            except ValueError:
+                console.print(f"[red]Error: Invalid date format '{arg.split('=')[1]}'. Use YYYY-MM-DD.[/red]")
+                return False
+
+    # Remove date arg if found
+    if date_arg_index != -1:
+        args.pop(date_arg_index)
 
     # If no date provided, use today's date
     if not date_str:
         from datetime import datetime
-
         date_str = datetime.now().strftime("%Y-%m-%d")
+        logger.info(f"No date provided, using today's date: {date_str}")
 
-    console.print(f"[cyan]Attempting to log in to MoneyMonk via Playwright (headless={headless})...[/cyan]")
+    # Expecting hours and description now
+    if len(args) < 2:
+        console.print(
+            "[red]Error: Missing arguments.[/red]\nUsage: /accounting login <hours> <description> [--headless] [--date=YYYY-MM-DD]"
+        )
+        return False
+
+    hours_str = args[0]
+    description = " ".join(args[1:])
+
+    # Validate hours
+    try:
+        hours_float = float(hours_str)
+        if hours_float <= 0:
+            raise ValueError("Hours must be positive.")
+    except ValueError:
+        console.print(f"[red]Error: Invalid hours value '{hours_str}'. Must be a positive number.[/red]")
+        return False
+
+    console.print(
+        f"[cyan]Attempting MoneyMonk login & form pre-fill (headless={headless}, date={date_str}, hours={hours_str})...[/cyan]"
+    )
 
     try:
         # Get the base time entry URL first
@@ -138,14 +179,77 @@ def login_command(args: List[str]) -> bool:
             console.print(f"[green]Successfully navigated to time entry page for date: {date_str}[/green]")
             console.print(f"[green]Screenshot saved to: {screenshot_path}[/green]")
 
-            # Check if we can see the time input field which indicates we're on the registration page
-            time_input = "input#time"
+            # --- Form Interaction ---
+            time_input = "input#time" # Selector for the time input field
+            desc_selector = "textarea[placeholder='Description']" # Selector for description
+            project_dropdown_trigger = 'div[class*="react-select__control"]' # Selector for project dropdown
+            project_option_selector = 'div[class*="react-select__option"]' # Selector for dropdown options
+            project_name_to_select = "AION Titan Streaming PI" # The specific project name
+            selected_project_value_selector = 'div[class*="react-select__single-value"]' # Selector for chosen project
+
             if page.is_visible(time_input):
                 console.print("[green]Time entry page loaded successfully (time input field visible).[/green]")
+                console.print("[cyan]Attempting to pre-fill form fields...[/cyan]")
+
+                try:
+                    # Click "Add time entry" button if present (might open a modal)
+                    add_entry_button = "button:has-text('Add time entry')"
+                    if page.is_visible(add_entry_button):
+                        logger.debug("Clicking 'Add time entry' button...")
+                        page.click(add_entry_button)
+                        page.wait_for_timeout(1000) # Wait for modal
+
+                    # Fill hours
+                    logger.debug(f"Filling hours: {hours_str}")
+                    page.fill(time_input, hours_str)
+
+                    # Fill description
+                    logger.debug(f"Filling description: {description}")
+                    page.fill(desc_selector, description)
+
+                    # Select project
+                    logger.debug(f"Selecting project: {project_name_to_select}")
+                    page.click(project_dropdown_trigger)
+                    logger.debug("Waiting for project dropdown options...")
+                    page.wait_for_selector(project_option_selector, state='visible', timeout=5000)
+                    logger.debug(f"Clicking project option: {project_name_to_select}")
+                    page.click(f"{project_option_selector}:has-text('{project_name_to_select}')")
+
+                    # Verify project selection
+                    page.wait_for_timeout(500) # Short wait for value to update
+                    selected_value = page.text_content(selected_project_value_selector, timeout=2000)
+                    logger.info(f"Selected project verified: {selected_value}")
+                    if project_name_to_select not in selected_value:
+                         logger.warning(f"Selected project text '{selected_value}' does not exactly match '{project_name_to_select}'")
+
+
+                    console.print("[green]Form fields pre-filled successfully.[/green]")
+                    console.print("[cyan]Form NOT submitted. Waiting 10 seconds for visual inspection...[/cyan]")
+                    page.wait_for_timeout(10000) # Keep the wait for inspection
+
+                except PlaywrightTimeoutError as pte:
+                    logger.error(f"Timeout error during form filling: {pte}")
+                    console.print(f"[red]Error: Timeout while trying to fill form field. {pte}[/red]")
+                    screenshot_path = Path("~/.Djin/logs/form_fill_timeout.png").expanduser()
+                    page.screenshot(path=str(screenshot_path))
+                    console.print(f"[red]Screenshot saved to: {screenshot_path}[/red]")
+                    return False
+                except Exception as fill_error:
+                    logger.error(f"Error during form filling: {fill_error}", exc_info=True)
+                    console.print(f"[red]Error: Could not pre-fill form fields: {fill_error}[/red]")
+                    screenshot_path = Path("~/.Djin/logs/form_fill_error.png").expanduser()
+                    page.screenshot(path=str(screenshot_path))
+                    console.print(f"[red]Screenshot saved to: {screenshot_path}[/red]")
+                    return False
+
             else:
                 console.print(
-                    "[yellow]Time entry page may not have loaded correctly (time input field not found).[/yellow]"
+                    "[yellow]Time entry page may not have loaded correctly (time input field not found). Cannot pre-fill form.[/yellow]"
                 )
+                screenshot_path = Path("~/.Djin/logs/time_input_not_found.png").expanduser()
+                page.screenshot(path=str(screenshot_path))
+                console.print(f"[yellow]Screenshot saved to: {screenshot_path}[/yellow]")
+                return False
 
             return True
     except (ConfigurationError, MoneyMonkError) as e:
@@ -217,11 +321,11 @@ def register_accounting_commands():
     commands_to_register = {
         "accounting register-hours": (
             register_hours_command,
-            "Register hours on MoneyMonk (Usage: /accounting register-hours YYYY-MM-DD hours description). Uses BASE_TIME_ENTRY_URL from .env.",
+            "Register hours on MoneyMonk (Usage: /accounting register-hours YYYY-MM-DD hours description [--headless]). Uses BASE_TIME_ENTRY_URL from .env.",
         ),
         "accounting login": (
             login_command,
-            "Test the login process for MoneyMonk and navigate to time entry page. Options: --headless, --date=YYYY-MM-DD",
+            "Test login, navigate to time entry page, and pre-fill form (Usage: /accounting login hours description [--headless] [--date=YYYY-MM-DD]).",
         ),
         # Add other accounting commands here
     }
