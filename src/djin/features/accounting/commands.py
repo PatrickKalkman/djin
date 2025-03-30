@@ -183,7 +183,7 @@ def login_command(args: List[str]) -> bool:
 
             # --- Form Interaction ---
             time_input = "input#time" # Selector for the time input field
-            desc_selector = "textarea[placeholder='Description']" # Selector for description
+            desc_selector = "input#description" # Selector for description (updated based on HTML)
             project_dropdown_trigger = 'div[class*="react-select__control"]' # Selector for project dropdown
             project_option_selector = 'div[class*="react-select__option"]' # Selector for dropdown options
             project_name_to_select = "AION Titan Streaming PI" # The specific project name
