@@ -2,7 +2,6 @@
 Command handlers for accounting features.
 """
 
-from pathlib import Path
 from typing import List
 
 from loguru import logger  # Import Loguru logger
@@ -18,10 +17,9 @@ from djin.common.errors import (  # Added MoneyMonkError, ConfigurationError
     MoneyMonkError,
     handle_error,
 )
-from djin.features.accounting.api import get_accounting_api
+from djin.features.accounting.playwright_client import register_hours_on_website
 
 # Import from the new playwright client
-from djin.features.accounting.playwright_client import _get_moneymonk_credentials
 
 # Create console for rich output
 console = Console()
@@ -30,6 +28,7 @@ console = Console()
 
 # --- Command Handlers ---
 
+
 def register_hours_command(args: List[str]) -> bool:
     """Register hours on MoneyMonk via Playwright automation."""
     logger.debug(f"Received register-hours command with args: {args}")
@@ -37,7 +36,7 @@ def register_hours_command(args: List[str]) -> bool:
     # --- Argument Parsing ---
     headless = "--headless" in args
     if headless:
-        args = [arg for arg in args if arg != "--headless"] # Filter out the flag
+        args = [arg for arg in args if arg != "--headless"]  # Filter out the flag
 
     # Expecting: date (YYYY-MM-DD), hours (e.g., 7.5), description (multi-word)
     if len(args) < 3:
@@ -54,6 +53,7 @@ def register_hours_command(args: List[str]) -> bool:
     # --- Input Validation ---
     try:
         from datetime import datetime
+
         datetime.strptime(date_str, "%Y-%m-%d")
     except ValueError:
         console.print(f"[red]Error: Invalid date format '{date_str}'. Use YYYY-MM-DD.[/red]")
@@ -78,14 +78,8 @@ def register_hours_command(args: List[str]) -> bool:
     )
 
     try:
-        # Import the client function directly
-        from djin.features.accounting.playwright_client import register_hours_on_website
-
         success = register_hours_on_website(
-            date=date_str,
-            description=description,
-            hours=hours_float,
-            headless=headless
+            date=date_str, description=description, hours=hours_float, headless=headless
         )
 
         if success:
@@ -98,7 +92,7 @@ def register_hours_command(args: List[str]) -> bool:
 
     except (ConfigurationError, MoneyMonkError, PlaywrightTimeoutError) as e:
         # Handle specific known errors from the client or Playwright
-        handle_error(e) # Displays the error nicely
+        handle_error(e)  # Displays the error nicely
         return False
     except Exception as e:
         # Handle unexpected errors during the command execution
@@ -116,7 +110,7 @@ def register_accounting_commands():
     commands_to_register = {
         "accounting register-hours": (
             register_hours_command,
-            "Register hours on MoneyMonk (Usage: /accounting register-hours YYYY-MM-DD hours description [--headless]). Requires .env configuration.",
+            "Register hours on MoneyMonk (Usage: /accounting register-hours YYYY-MM-DD hours description).",
         ),
         # Add other accounting commands here
     }

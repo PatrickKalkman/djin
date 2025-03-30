@@ -3,9 +3,10 @@ Accounting agent for Djin.
 
 Handles interactions related to accounting tasks, like registering hours.
 """
+
 from typing import Any, Dict
 
-from loguru import logger # Import Loguru logger
+from loguru import logger  # Import Loguru logger
 
 from djin.features.accounting.graph.workflow import create_register_hours_graph
 
@@ -57,7 +58,7 @@ class AccountingAgent:
             "request_type": "register_hours",
             "date": date,
             "description": description,
-            "hours": hours, # Pass as string for validation node
+            "hours": hours,  # Pass as string for validation node
             "validation_errors": [],
             "registration_successful": False,
             "registration_message": "",
@@ -66,6 +67,7 @@ class AccountingAgent:
         }
         result = self._invoke_workflow(self.register_hours_workflow, initial_state)
         return result
+
 
 # Potential future API integration
 # from djin.features.accounting.api import get_accounting_api

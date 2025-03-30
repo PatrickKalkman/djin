@@ -227,7 +227,7 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             add_entry_button = "button:has-text('Add time entry')"
             # Modal selectors
             hours_selector = "input#time"  # Changed from placeholder to ID
-            desc_selector = "textarea#description"  # Changed from placeholder to ID
+            desc_selector = "input#description"  # Changed from textarea to input
             project_dropdown_trigger = "div.react-select__control"
             project_option_selector_base = 'div[class*="react-select__option"]'
             submit_button_selector = "button[data-testid='button']:has-text('Toevoegen')"  # Specific submit button
