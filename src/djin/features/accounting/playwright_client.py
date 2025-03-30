@@ -27,28 +27,23 @@ DEFAULT_TIMEOUT = 30 * 1000  # 30 seconds
 def _get_moneymonk_credentials():
     """Loads MoneyMonk credentials from config and keyring."""
     import os
-    
+
     # First try to get credentials from environment variables
     env_url = os.environ.get("LOGIN_URL")
     env_username = os.environ.get("EMAIL")
     env_password = os.environ.get("PASSWORD")
     env_totp = os.environ.get("TOTP_SECRET")
-    
+
     # If all environment variables are present, use them
     if env_url and env_username and env_password and env_totp:
         logger.info("Using credentials from environment variables")
-        return {
-            "url": env_url,
-            "username": env_username,
-            "password": env_password,
-            "totp_secret": env_totp
-        }
-    
+        return {"url": env_url, "username": env_username, "password": env_password, "totp_secret": env_totp}
+
     # Otherwise, fall back to config and keyring
     logger.info("Some credentials missing from environment, falling back to config and keyring")
     config = load_config()
     mm_config = config.get("moneymonk", {})
-    
+
     # Use environment variables if available, otherwise use config values
     url = env_url or mm_config.get("url")
     username = env_username or mm_config.get("username")
@@ -152,13 +147,13 @@ def login_to_moneymonk(headless=True) -> bool:
     try:
         # Get credentials from environment variables first, then fall back to keyring
         import os
-        
+
         # Try to get credentials from environment variables first
-        email = os.environ.get('EMAIL')
-        password = os.environ.get('PASSWORD')
-        totp_secret = os.environ.get('TOTP_SECRET')
-        login_url = os.environ.get('LOGIN_URL')
-        
+        email = os.environ.get("EMAIL")
+        password = os.environ.get("PASSWORD")
+        totp_secret = os.environ.get("TOTP_SECRET")
+        login_url = os.environ.get("LOGIN_URL")
+
         # If any are missing, fall back to keyring
         if not all([email, password, totp_secret, login_url]):
             logger.info("Some credentials missing from environment, falling back to keyring")
@@ -167,69 +162,69 @@ def login_to_moneymonk(headless=True) -> bool:
             password = password or creds["password"]
             totp_secret = totp_secret or creds["totp_secret"]
             login_url = login_url or creds["url"]
-        
+
         logger.info(f"Using login URL: {login_url}")
-        
+
         with playwright_context(headless=headless) as page:
             # Step 1: Navigate to login page
             logger.debug(f"Navigating to {login_url}")
             page.goto(login_url)
-            
+
             # Add a small delay to ensure page is fully loaded (similar to Selenium example)
             page.wait_for_timeout(2000)  # 2 seconds
-            
+
             # Step 2: Enter credentials
             logger.debug("Entering credentials...")
             page.fill("#email", email)
             page.fill("#password", password)
-            
+
             # Step 3: Click login button
             logger.debug("Clicking login button...")
             page.click("button[data-testid='button']")
-            
+
             # Add a small delay to allow for redirects (similar to Selenium example)
             page.wait_for_timeout(2000)  # 2 seconds
-            
+
             # Step 4: Handle TOTP if needed
             # Take a screenshot before TOTP (for debugging)
             screenshot_path = Path("~/.Djin/logs/before_totp.png").expanduser()
             screenshot_path.parent.mkdir(parents=True, exist_ok=True)
             page.screenshot(path=str(screenshot_path))
-            
+
             # Check if TOTP field is visible
             if page.is_visible("#code"):
                 logger.info("TOTP code entry required.")
                 # Generate TOTP code
                 totp_code = pyotp.TOTP(totp_secret).now()
                 logger.info(f"Generated TOTP code: {totp_code}")
-                
+
                 # Enter TOTP code
                 page.fill("#code", totp_code)
-                
+
                 # Click submit button
                 logger.debug("Clicking submit button after TOTP...")
                 page.click("button[data-testid='button']")
-                
+
                 # Add a delay after TOTP submission (similar to Selenium example)
                 page.wait_for_timeout(2000)  # 2 seconds
             else:
                 logger.info("TOTP code entry not required (code field not visible).")
-            
+
             # Take a screenshot after login attempt (for debugging)
             screenshot_path = Path("~/.Djin/logs/after_login.png").expanduser()
             screenshot_path.parent.mkdir(parents=True, exist_ok=True)
             page.screenshot(path=str(screenshot_path))
-            
+
             # Log the current URL for debugging
             logger.debug(f"Current URL after login attempt: {page.url}")
-            
+
             # Check if we're still on the login or TOTP screen
             if page.is_visible("#email") or page.is_visible("#password"):
                 raise MoneyMonkError("Login failed: Still on login screen. Credentials may be incorrect.")
-            
+
             if page.is_visible("#code"):
                 raise MoneyMonkError("Login failed: Still on TOTP screen. TOTP code may be incorrect or not accepted.")
-            
+
             # If we're not on login or TOTP screens, assume success
             logger.info("Login successful (no longer on login/TOTP screens).")
             return True
@@ -266,22 +261,22 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
         MoneyMonkError: If registration fails.
     """
     logger.info(f"Attempting to register {hours} hours for {date} via Playwright (headless={headless})...")
-    
+
     try:
         # First, we need to log in
         logger.info("Starting with login process...")
-        
+
         # Create a new browser context
         with playwright_context(headless=headless) as page:
             # 1. Login first
             import os
-            
+
             # Try to get credentials from environment variables first
-            email = os.environ.get('EMAIL')
-            password = os.environ.get('PASSWORD')
-            totp_secret = os.environ.get('TOTP_SECRET')
-            login_url = os.environ.get('LOGIN_URL')
-            
+            email = os.environ.get("EMAIL")
+            password = os.environ.get("PASSWORD")
+            totp_secret = os.environ.get("TOTP_SECRET")
+            login_url = os.environ.get("LOGIN_URL")
+
             # If any are missing, fall back to keyring
             if not all([email, password, totp_secret, login_url]):
                 logger.info("Some credentials missing from environment, falling back to keyring")
@@ -290,113 +285,113 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
                 password = password or creds["password"]
                 totp_secret = totp_secret or creds["totp_secret"]
                 login_url = login_url or creds["url"]
-            
+
             # Step 1: Navigate to login page
             logger.debug(f"Navigating to {login_url}")
             page.goto(login_url)
-            
+
             # Add a small delay to ensure page is fully loaded
             page.wait_for_timeout(2000)  # 2 seconds
-            
+
             # Step 2: Enter credentials
             logger.debug("Entering credentials...")
             page.fill("#email", email)
             page.fill("#password", password)
-            
+
             # Step 3: Click login button
             logger.debug("Clicking login button...")
             page.click("button[data-testid='button']")
-            
+
             # Add a small delay to allow for redirects
             page.wait_for_timeout(2000)  # 2 seconds
-            
+
             # Step 4: Handle TOTP if needed
             if page.is_visible("#code"):
                 logger.info("TOTP code entry required.")
                 # Generate TOTP code
                 totp_code = pyotp.TOTP(totp_secret).now()
                 logger.info(f"Generated TOTP code: {totp_code}")
-                
+
                 # Enter TOTP code
                 page.fill("#code", totp_code)
-                
+
                 # Click submit button
                 logger.debug("Clicking submit button after TOTP...")
                 page.click("button[data-testid='button']")
-                
+
                 # Add a delay after TOTP submission
                 page.wait_for_timeout(2000)  # 2 seconds
             else:
                 logger.info("TOTP code entry not required (code field not visible).")
-            
+
             # Check if login was successful
             if page.is_visible("#email") or page.is_visible("#password") or page.is_visible("#code"):
                 raise MoneyMonkError("Login failed, cannot register hours.")
-            
+
             logger.info("Login successful, proceeding to hour registration.")
-            
+
             # 2. Navigate to the hour registration page
             # Format the URL with the date parameter
             from datetime import datetime
-            
+
             # Use the provided date or today's date if not specified
             entry_date = date if date else datetime.now().strftime("%Y-%m-%d")
-            
+
             # Get the base URL from environment or construct it
             base_time_entry_url = os.environ.get("BASE_TIME_ENTRY_URL")
             if not base_time_entry_url:
                 # Construct the URL with the correct format for MoneyMonk
                 base_time_entry_url = "https://app.moneymonk.nl/v2/administrations/9601/time/entry"
-            
+
             # Add the date parameter
             registration_url = f"{base_time_entry_url}?date={entry_date}"
-            
+
             logger.debug(f"Navigating to hour registration page: {registration_url}")
             page.goto(registration_url)
-            
+
             # Add a delay to ensure page is fully loaded
             page.wait_for_timeout(2000)  # 2 seconds
-            
+
             # Take a screenshot of the registration page for debugging
             screenshot_path = Path("~/.Djin/logs/registration_page.png").expanduser()
             screenshot_path.parent.mkdir(parents=True, exist_ok=True)
             page.screenshot(path=str(screenshot_path))
             logger.debug(f"Screenshot of registration page saved to {screenshot_path}")
-            
+
             # 3. Fill in the form with MoneyMonk's actual selectors
             # The date is already set in the URL, so we don't need to fill it in the form
-            
+
             # Look for the "Add time entry" button and click it
             add_entry_button = "button:has-text('Add time entry')"
             logger.debug("Looking for 'Add time entry' button...")
-            
+
             if page.is_visible(add_entry_button):
                 logger.debug("Clicking 'Add time entry' button...")
                 page.click(add_entry_button)
                 page.wait_for_timeout(1000)  # Wait for modal to appear
-            
+
             # Now fill in the form in the modal
             # Note: We don't need a date selector since the date is in the URL
             date_selector = None  # Define it but we won't use it for filling
             desc_selector = "textarea[placeholder='Description']"
             hours_selector = "input[placeholder='Hours']"
             submit_button_selector = "button:has-text('Save')"
-            
+
             # Log the current page content for debugging
             logger.debug(f"Current page content: {page.content()}")
-            
+
             # Wait for form elements with explicit timeouts
             try:
                 # We don't need to wait for date input since it's in the URL
                 # logger.debug("Waiting for date input field...")
                 # page.wait_for_selector(date_selector, state="visible", timeout=5000)
-                
+
                 logger.debug("Waiting for description field...")
                 page.wait_for_selector(desc_selector, state="visible", timeout=5000)
-                
+
                 logger.debug("Waiting for hours field...")
                 page.wait_for_selector(hours_selector, state="visible", timeout=5000)
-                
+
                 logger.debug("Waiting for submit button...")
                 page.wait_for_selector(submit_button_selector, state="visible", timeout=5000)
             except PlaywrightTimeoutError as e:
@@ -405,53 +400,53 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
                 page.screenshot(path=str(screenshot_path))
                 logger.error(f"Screenshot saved to {screenshot_path}")
                 raise MoneyMonkError(f"Could not find registration form elements: {e}")
-            
+
             # Fill in the form
             # We don't need to fill the date field since it's in the URL
             # logger.debug(f"Filling date field with: {date}")
             # page.fill(date_selector, date)
-            
+
             logger.debug(f"Filling description field with: {description}")
             page.fill(desc_selector, description)
-            
+
             logger.debug(f"Filling hours field with: {hours}")
             page.fill(hours_selector, str(hours))
-            
+
             # Take a screenshot before submission
             screenshot_path = Path("~/.Djin/logs/before_submit.png").expanduser()
             page.screenshot(path=str(screenshot_path))
             logger.debug(f"Screenshot before submission saved to {screenshot_path}")
-            
+
             # Submit the form
             logger.debug("Clicking submit button...")
             page.click(submit_button_selector)
-            
+
             # Add a delay after submission
             page.wait_for_timeout(3000)  # 3 seconds
-            
+
             # Take a screenshot after submission
             screenshot_path = Path("~/.Djin/logs/after_submit.png").expanduser()
             page.screenshot(path=str(screenshot_path))
             logger.debug(f"Screenshot after submission saved to {screenshot_path}")
-            
+
             # Check for success indicators
             # In MoneyMonk, success might be indicated by:
             # 1. The modal closing
             # 2. The new entry appearing in the list
             # 3. A toast notification
-            
+
             # Wait a moment for any animations to complete
             page.wait_for_timeout(2000)
-            
+
             # Take a screenshot after submission for verification
             screenshot_path = Path("~/.Djin/logs/after_submit_final.png").expanduser()
             page.screenshot(path=str(screenshot_path))
             logger.debug(f"Final screenshot saved to {screenshot_path}")
-            
+
             # Check if the modal is closed (success indicator)
             if not page.is_visible(desc_selector) and not page.is_visible(hours_selector):
                 logger.info("Hour registration successful (form modal closed).")
-                
+
                 # Look for the entry in the list (optional verification)
                 try:
                     # Look for an entry with our description
@@ -462,21 +457,16 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
                         logger.info("Entry added but not immediately visible in the list.")
                 except Exception as e:
                     logger.warning(f"Could not verify entry in list: {e}")
-                
+
                 return True
-            
+
             # If we're still seeing the form, it might indicate failure
             if page.is_visible(desc_selector) or page.is_visible(hours_selector):
                 logger.error("Hour registration failed (form still visible).")
-                
+
                 # Check for error messages
-                error_selectors = [
-                    ".error-message",
-                    ".alert-error",
-                    "text=Error",
-                    "text=Failed"
-                ]
-                
+                error_selectors = [".error-message", ".alert-error", "text=Error", "text=Failed"]
+
                 error_message = "Unknown error"
                 for selector in error_selectors:
                     if page.is_visible(selector):
@@ -486,9 +476,9 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
                             break
                         except Exception:
                             pass
-                
+
                 raise MoneyMonkError(f"Hour registration failed: {error_message}")
-            
+
             # If we can't determine success or failure, assume success
             logger.info("Hour registration likely successful (no error indicators).")
             return True
