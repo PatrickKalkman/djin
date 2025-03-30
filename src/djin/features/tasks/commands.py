@@ -2,134 +2,146 @@
 Command handlers for Jira task management.
 """
 
-import logging  # Add logging import
+import logging
+from datetime import datetime # Added import
+from typing import List # Added import
 
 from rich.console import Console
 
 from djin.cli.commands import register_command
-from djin.common.errors import handle_error
-from djin.features.tasks.agent import TaskAgent
+from djin.common.errors import DjinError, handle_error # Import DjinError
+# Removed TaskAgent import
+from djin.features.tasks.display import format_tasks_table # Import the formatter
 from djin.features.tasks.jira_client import JiraError
 
 # Create console for rich output
 console = Console()
-# Create task agent
-task_agent = TaskAgent()
+logger = logging.getLogger("djin.tasks.commands") # Define logger at module level
+# Removed task_agent = TaskAgent()
 
 
-def todo_command(args):
+# --- Command Handlers ---
+
+def _handle_task_list_result(result_dict: dict, title: str) -> bool:
+    """Helper to display task list results or errors."""
+    tasks = result_dict.get("tasks", [])
+    errors = result_dict.get("errors", [])
+
+    if errors:
+        # Print errors, especially the specific 'no worked on tasks' message
+        for error in errors:
+            if "No tasks found that you worked on" in error:
+                 console.print(f"[yellow]{error}[/yellow]")
+            else:
+                 console.print(f"[red]Error: {error}[/red]")
+        # If there were errors but also tasks (e.g., fallback), show tasks.
+        # Otherwise, return False if only errors occurred.
+        if not tasks and any("No tasks found that you worked on" not in e for e in errors):
+             return False # Indicate failure if there were real errors
+
+    if tasks:
+        table = format_tasks_table(tasks, title=title)
+        console.print(table)
+        return True
+    elif not errors: # No tasks and no errors
+        console.print(f"[yellow]No tasks found for '{title}'.[/yellow]")
+        return True # No tasks isn't a failure
+
+    # If we had the specific 'no worked on tasks' error but no tasks, it's not a failure
+    if any("No tasks found that you worked on" in e for e in errors):
+        return True
+
+    return False # Should not be reached ideally
+
+
+def todo_command(args: List[str]) -> bool:
     """Show Jira issues in To Do status."""
     try:
-        # Use the API layer to get the tasks agent
         from djin.features.tasks.api import get_tasks_api
-
-        # Get the tasks API
         tasks_api = get_tasks_api()
-
-        # Call the API method to get todo tasks - returns pre-formatted output
-        result = tasks_api.get_todo_tasks()
-
-        # Just return the result without printing it again
-        # The result is already a formatted string with the table
-        return result
+        result_dict = tasks_api.get_todo_tasks()
+        return _handle_task_list_result(result_dict, "My To Do Tasks")
+    except DjinError as e:
+        handle_error(e)
+        return False
     except Exception as e:
-        console.print(f"[red]Error showing To Do issues: {str(e)}[/red]")
+        logger.error(f"Unexpected error in todo command: {e}", exc_info=True)
+        console.print(f"[bold red]An unexpected error occurred.[/bold red]")
         return False
 
 
-def active_command(args):
+def active_command(args: List[str]) -> bool:
     """Show all active Jira issues."""
     try:
-        # Use the API layer to get the tasks agent
         from djin.features.tasks.api import get_tasks_api
-
-        # Get the tasks API
         tasks_api = get_tasks_api()
-
-        # Call the API method to get active tasks
-        result = tasks_api.get_active_tasks()
-
-        # Return the result
-        return result
+        result_dict = tasks_api.get_active_tasks()
+        return _handle_task_list_result(result_dict, "My Active Tasks")
+    except DjinError as e:
+        handle_error(e)
+        return False
     except Exception as e:
-        console.print(f"[red]Error showing active issues: {str(e)}[/red]")
+        logger.error(f"Unexpected error in active command: {e}", exc_info=True)
+        console.print(f"[bold red]An unexpected error occurred.[/bold red]")
         return False
 
 
-def worked_on_command(args):
+def worked_on_command(args: List[str]) -> bool:
     """Show Jira issues worked on for a specific date."""
     try:
-        # Use the API layer to get the tasks agent
-        import logging
-
         from djin.features.tasks.api import get_tasks_api
-
-        logger = logging.getLogger("djin.tasks")
-        # Increase logging level temporarily to see more details
-        logger.setLevel(logging.INFO)
-
-        # Get the tasks API
         tasks_api = get_tasks_api()
 
-        # Parse date argument if provided
-        date_str = None  # Default to today
+        date_str = None
+        display_date = "today"
         if args and len(args) > 0:
             date_str = args[0]
-            # Validate date format
-            from datetime import datetime
-
             try:
                 datetime.strptime(date_str, "%Y-%m-%d")
+                display_date = date_str
             except ValueError:
                 console.print("[red]Invalid date format. Please use YYYY-MM-DD format.[/red]")
                 return False
 
-        # Log that we're fetching worked-on tasks
-        display_date = date_str or "today"
         logger.info(f"Command: Fetching tasks worked on for {display_date}")
         console.print(f"[cyan]Searching for tasks worked on {display_date}...[/cyan]")
 
-        # Call the API method to get tasks worked on
-        result = tasks_api.get_worked_on_tasks(date_str)
+        result_dict = tasks_api.get_worked_on_tasks(date_str)
+        return _handle_task_list_result(result_dict, f"Tasks Worked On ({display_date})")
 
-        # Reset logging level
-        logger.setLevel(logging.WARNING)
-
-        # Return the result
-        return result
+    except DjinError as e:
+        handle_error(e)
+        return False
     except Exception as e:
-        console.print(f"[red]Error showing worked on issues: {str(e)}[/red]")
+        logger.error(f"Unexpected error in worked-on command: {e}", exc_info=True)
+        console.print(f"[bold red]An unexpected error occurred.[/bold red]")
         return False
 
 
-def completed_command(args):
+def completed_command(args: List[str]) -> bool:
     """Show completed Jira issues."""
     try:
-        # Use the API layer to get the tasks agent
         from djin.features.tasks.api import get_tasks_api
-
-        # Get the tasks API
         tasks_api = get_tasks_api()
 
-        # Parse days argument if provided
-        days = 7  # Default
+        days = 7
         if args and len(args) > 0:
             try:
                 days = int(args[0])
             except ValueError:
                 console.print("[yellow]Invalid days value, using default (7)[/yellow]")
 
-        # Call the API method to get completed tasks
-        result = tasks_api.get_completed_tasks(days)
-
-        # Return the result
-        return result
+        result_dict = tasks_api.get_completed_tasks(days)
+        return _handle_task_list_result(result_dict, f"My Completed Tasks (Last {days} Days)")
+    except DjinError as e:
+        handle_error(e)
+        return False
     except Exception as e:
-        console.print(f"[red]Error showing completed issues: {str(e)}[/red]")
+        logger.error(f"Unexpected error in completed command: {e}", exc_info=True)
+        console.print(f"[bold red]An unexpected error occurred.[/bold red]")
         return False
 
-
-def task_details_command(args):
+def task_details_command(args: List[str]) -> bool:
     """Show details for a specific Jira issue."""
     try:
         from djin.features.tasks.api import get_tasks_api

@@ -3,6 +3,7 @@ Public API for the task agent.
 
 This module provides a public interface for other agents to call the task agent.
 """
+from typing import Any, Dict, List, Optional # Added imports
 
 from djin.features.tasks.agent import TaskAgent
 
@@ -25,38 +26,37 @@ class TaskAPI:
         """Initialize the task API with a task agent."""
         self._agent = TaskAgent()
 
-    def get_todo_tasks(self) -> str:
+    def get_todo_tasks(self) -> Dict[str, Any]:
         """
         Get to-do tasks for the current user.
 
         Returns:
-            str: Formatted output of todo tasks
+            Dict containing 'tasks': List[Dict] and 'errors': List[str].
         """
         return self._agent.process_todo_request()
-        
-    def get_active_tasks(self) -> str:
+
+    def get_active_tasks(self) -> Dict[str, Any]:
         """
         Get all active (non-completed) tasks for the current user.
 
         Returns:
-            str: Formatted output of active tasks
+            Dict containing 'tasks': List[Dict] and 'errors': List[str].
         """
         return self._agent.process_active_request()
-        
-    def get_worked_on_tasks(self, date_str: str = None) -> str:
+
+    def get_worked_on_tasks(self, date_str: Optional[str] = None) -> Dict[str, Any]:
         """
         Get tasks worked on for a specific date.
-        
+
         Args:
             date_str: Date string in YYYY-MM-DD format (default: today)
-            
+
         Returns:
-            str: Formatted output of tasks worked on
+            Dict containing 'tasks': List[Dict] and 'errors': List[str].
         """
         return self._agent.process_worked_on_request(date_str)
-        
 
-    def get_completed_tasks(self, days: int = 7) -> str:
+    def get_completed_tasks(self, days: int = 7) -> Dict[str, Any]:
         """
         Get completed tasks for the current user.
 
@@ -64,10 +64,11 @@ class TaskAPI:
             days: Number of days to look back (default: 7)
 
         Returns:
-            str: Formatted output of completed tasks
+            Dict containing 'tasks': List[Dict] and 'errors': List[str].
         """
         return self._agent.process_completed_request(days)
 
+    # --- Methods returning formatted strings directly ---
     def get_task_details(self, issue_key: str) -> str:
         """
         Get details for a specific task.
