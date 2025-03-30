@@ -376,6 +376,8 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
                 page.wait_for_timeout(1000)  # Wait for modal to appear
             
             # Now fill in the form in the modal
+            # Note: We don't need a date selector since the date is in the URL
+            date_selector = None  # Define it but we won't use it for filling
             desc_selector = "textarea[placeholder='Description']"
             hours_selector = "input[placeholder='Hours']"
             submit_button_selector = "button:has-text('Save')"
@@ -385,8 +387,9 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             
             # Wait for form elements with explicit timeouts
             try:
-                logger.debug("Waiting for date input field...")
-                page.wait_for_selector(date_selector, state="visible", timeout=5000)
+                # We don't need to wait for date input since it's in the URL
+                # logger.debug("Waiting for date input field...")
+                # page.wait_for_selector(date_selector, state="visible", timeout=5000)
                 
                 logger.debug("Waiting for description field...")
                 page.wait_for_selector(desc_selector, state="visible", timeout=5000)
@@ -404,8 +407,9 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
                 raise MoneyMonkError(f"Could not find registration form elements: {e}")
             
             # Fill in the form
-            logger.debug(f"Filling date field with: {date}")
-            page.fill(date_selector, date)
+            # We don't need to fill the date field since it's in the URL
+            # logger.debug(f"Filling date field with: {date}")
+            # page.fill(date_selector, date)
             
             logger.debug(f"Filling description field with: {description}")
             page.fill(desc_selector, description)
