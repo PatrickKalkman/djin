@@ -187,38 +187,37 @@ def set_task_status_command(args):
         return False  # Indicate command failure
 
 
-register_command(
-    "tasks todo",
-    todo_command,
-    "Show your Jira issues in To Do status",
-)
+# --- Registration Function ---
 
-register_command(
-    "tasks active",
-    active_command,
-    "Show all your active Jira issues",
-)
+logger = logging.getLogger("djin.tasks.commands") # Ensure logger is defined for registration
 
-register_command(
-    "tasks worked-on",
-    worked_on_command,
-    "Show Jira issues you worked on for a specific date (default: today)",
-)
 
-register_command(
-    "tasks completed",
-    completed_command,
-    "Show your completed Jira issues (default: last 7 days)",
-)
+def register_task_commands():
+    """Registers all commands related to the tasks feature."""
+    commands_to_register = {
+        "tasks todo": (todo_command, "Show your Jira issues in To Do status"),
+        "tasks active": (active_command, "Show all your active Jira issues"),
+        "tasks worked-on": (
+            worked_on_command,
+            "Show Jira issues you worked on for a specific date (default: today)",
+        ),
+        "tasks completed": (
+            completed_command,
+            "Show your completed Jira issues (default: last 7 days)",
+        ),
+        "tasks": (
+            task_details_command,
+            "Show details for a specific Jira issue (e.g., /tasks PROJ-123)",
+        ),
+        "tasks set-status": (
+            set_task_status_command,
+            "Set the status of a Jira issue (e.g., /tasks set-status PROJ-123 'In Progress')",
+        ),
+    }
+    for name, (func, help_text) in commands_to_register.items():
+        register_command(name, func, help_text)
+    logger.info(f"Task commands registered: {list(commands_to_register.keys())}")
 
-register_command(
-    "tasks",
-    task_details_command,
-    "Show details for a specific Jira issue (e.g., /tasks PROJ-123)",
-)
 
-register_command(
-    "tasks set-status",
-    set_task_status_command,
-    "Set the status of a Jira issue (e.g., /tasks set-status PROJ-123 'In Progress')",
-)
+# --- Remove Module-Level Side Effects ---
+# The register_command calls below are now moved into the function above.
