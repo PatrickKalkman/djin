@@ -9,9 +9,13 @@ from typing import List
 from pydantic import BaseModel
 
 
+from pydantic import Field # Added Field
+
+
 class SummarizeTitlesState(BaseModel):
     """State for the summarize titles workflow."""
 
-    titles: List[str]
+    keys: List[str] = Field(default_factory=list)
+    titles: List[str] = Field(default_factory=list)
     summary: str = ""
     error: str = ""

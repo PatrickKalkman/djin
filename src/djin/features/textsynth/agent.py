@@ -10,7 +10,10 @@ from typing import List
 from djin.common.errors import DjinError
 from djin.features.textsynth.graph.workflow import create_title_summarization_graph
 
-# Removed unused imports: datetime, timedelta, TaskAPI, ReportLLMClient
+from typing import List, Dict, Any # Added Dict, Any
+
+from djin.common.errors import DjinError
+from djin.features.textsynth.graph.workflow import create_title_summarization_graph
 
 # Set up logging
 logger = logging.getLogger("djin.textsynth")
@@ -24,24 +27,29 @@ class TextSynthAgent:
         # Only initialize what's needed for the remaining methods
         self._title_summarization_graph = create_title_summarization_graph()
 
-    def summarize_titles(self, titles: List[str]) -> str:
+    def summarize_titles_with_keys(self, keys: List[str], titles: List[str]) -> str:
         """
-        Summarize multiple Jira issue titles using a LangGraph workflow.
+        Summarize multiple Jira issue titles, including their keys, using a LangGraph workflow.
 
         Args:
-            titles: List of Jira issue titles
+            keys: List of Jira issue keys.
+            titles: List of corresponding Jira issue titles.
 
         Returns:
-            str: Summarized text
+            str: Summarized text including ticket IDs.
 
         Raises:
-            DjinError: If the summarization fails
+            DjinError: If the summarization fails.
         """
-        try:
-            logger.info(f"Summarizing {len(titles)} Jira issue titles")
+        if len(keys) != len(titles):
+            raise DjinError("Number of keys and titles must match for summarization.")
 
-            # Use the workflow graph
-            result = self._title_summarization_graph.invoke({"titles": titles})
+        try:
+            logger.info(f"Summarizing {len(titles)} Jira issues (keys and titles)")
+
+            # Use the workflow graph, passing both keys and titles
+            initial_state = {"keys": keys, "titles": titles}
+            result = self._title_summarization_graph.invoke(initial_state)
 
             # Check for errors
             if result.get("error"):

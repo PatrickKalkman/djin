@@ -5,24 +5,32 @@ This module provides prompts for interacting with LLMs for report-related operat
 and text synthesis.
 """
 
-# Prompt for summarizing multiple Jira issue titles
+# Prompt for summarizing multiple Jira issue titles including their keys
 SUMMARIZE_TITLES_PROMPT = """
-You are an assistant that summarizes multiple Jira issue titles into a concise, action-oriented summary.
-Given the following Jira issue titles, create a brief summary that describes what was worked on,
+You are an assistant that summarizes multiple Jira issues into a concise, action-oriented summary.
+Given the following Jira issues (Key: Title format), create a brief summary that describes what was worked on,
 as if you're reporting on completed or ongoing work.
 
-Jira Issue Titles:
-{titles}
+Jira Issues:
+{issues}
 
 Your summary should:
-1. Begin with phrases like "Worked on" or "Made progress on"
-2. Be concise (1 sentence only)
-3. Describe the work in an action-oriented way
-4. Focus only on what was done, not on the impact or benefits
-5. Be written in a clear, professional, first-person style
-6. Use past tense as if reporting on work that was done
-7. Do NOT include commentary about improvements, benefits, or the quality of the work
-8. IMPORTANT: If the titles contain ticket IDs (like SB-1234), include ALL ticket IDs in parentheses in your summary
+1. Begin with phrases like "Worked on" or "Made progress on".
+2. Be concise (1 sentence only).
+3. Describe the work in an action-oriented way.
+4. Focus only on what was done, not on the impact or benefits.
+5. Be written in a clear, professional, first-person style.
+6. Use past tense as if reporting on work that was done.
+7. Do NOT include commentary about improvements, benefits, or the quality of the work.
+8. IMPORTANT: Include ALL the provided Jira issue keys (e.g., PROJ-123) in parentheses at the end of the summary sentence.
+
+Example Input:
+Jira Issues:
+- TASK-1: Fix login bug
+- FEAT-2: Implement new dashboard
+
+Example Output:
+Worked on fixing a login bug and implementing the new dashboard (TASK-1, FEAT-2).
 
 Summary:
 """

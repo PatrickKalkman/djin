@@ -23,13 +23,16 @@ def prepare_titles_node(state):
         Updated state
     """
     try:
-        # Format titles for processing
+        # Validate keys and titles
+        keys = state.keys
         titles = state.titles
-        if not titles:
-            return state.model_copy(update={"error": "No titles provided for summarization"})
+        if not titles or not keys:
+            return state.model_copy(update={"error": "No keys or titles provided for summarization"})
+        if len(keys) != len(titles):
+             return state.model_copy(update={"error": "Mismatch between number of keys and titles"})
 
-        # Log the titles being processed
-        logger.info(f"Processing {len(titles)} titles for summarization")
+        # Log the items being processed
+        logger.info(f"Processing {len(titles)} issues (keys and titles) for summarization")
 
         return state
     except Exception as e:
@@ -53,14 +56,15 @@ def summarize_titles_node(state):
         if state.error:
             return state
 
-        # Get titles from state
+        # Get keys and titles from state
+        keys = state.keys
         titles = state.titles
 
         # Create LLM client
         llm_client = TextSynthLLMClient()
 
-        # Generate summary
-        summary = llm_client.summarize_titles(titles)
+        # Generate summary using both keys and titles
+        summary = llm_client.summarize_titles_with_keys(keys, titles)
 
         # Update state with summary
         return state.model_copy(update={"summary": summary})

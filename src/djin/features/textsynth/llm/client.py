@@ -42,28 +42,32 @@ class TextSynthLLMClient:
 
         self.llm = ChatGroq(groq_api_key=api_key, model_name=model)
 
-    def summarize_titles(self, titles: List[str]) -> str:
+    def summarize_titles_with_keys(self, keys: List[str], titles: List[str]) -> str:
         """
-        Summarize multiple Jira issue titles.
+        Summarize multiple Jira issues using their keys and titles.
 
         Args:
-            titles: List of Jira issue titles
+            keys: List of Jira issue keys.
+            titles: List of corresponding Jira issue titles.
 
         Returns:
-            str: Summarized text
+            str: Summarized text including ticket IDs.
 
         Raises:
-            DjinError: If the summarization fails
+            DjinError: If the summarization fails.
         """
-        try:
-            logger.info(f"Summarizing {len(titles)} Jira issue titles")
+        if len(keys) != len(titles):
+            raise DjinError("Number of keys and titles must match for summarization.")
 
-            # Format titles for the prompt
-            titles_str = "\n".join([f"- {title}" for title in titles])
+        try:
+            logger.info(f"Summarizing {len(titles)} Jira issues (keys and titles)")
+
+            # Format keys and titles for the prompt
+            issues_str = "\n".join([f"- {key}: {title}" for key, title in zip(keys, titles)])
 
             # Prepare prompt
             prompt_template = PromptTemplate.from_template(SUMMARIZE_TITLES_PROMPT)
-            prompt = prompt_template.format(titles=titles_str)
+            prompt = prompt_template.format(issues=issues_str) # Pass combined string
 
             # Call Groq LLM
             response = self.llm.invoke(prompt)
@@ -74,5 +78,5 @@ class TextSynthLLMClient:
 
             return summary
         except Exception as e:
-            logger.error(f"Error in summarize_titles: {str(e)}")
-            raise DjinError(f"Failed to summarize titles: {str(e)}")
+            logger.error(f"Error in summarize_titles_with_keys: {str(e)}")
+            raise DjinError(f"Failed to summarize issues: {str(e)}")

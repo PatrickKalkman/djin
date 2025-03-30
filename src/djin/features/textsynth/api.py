@@ -6,6 +6,8 @@ This module provides a public interface for other agents to call the report and 
 
 from typing import List
 
+from typing import List, Dict, Any # Added Dict, Any
+
 from djin.features.textsynth.agent import TextSynthAgent
 
 
@@ -16,14 +18,17 @@ class TextSynthAPI:
         """Initialize the text synth API with a text synthesis agent."""
         self._agent = TextSynthAgent()
 
-    def summarize_titles(self, titles: List[str]) -> str:
+    def summarize_tasks(self, tasks_data: List[Dict[str, Any]]) -> str:
         """
-        Summarize multiple Jira issue titles.
+        Summarize multiple Jira issues based on their keys and titles.
 
         Args:
-            titles: List of Jira issue titles
+            tasks_data: List of dictionaries, each containing 'key' and 'summary'.
 
         Returns:
-            str: Summarized text
+            str: Summarized text including ticket IDs.
         """
-        return self._agent.summarize_titles(titles)
+        # Extract keys and titles for the agent
+        keys = [task.get("key") for task in tasks_data]
+        titles = [task.get("summary") for task in tasks_data]
+        return self._agent.summarize_titles_with_keys(keys, titles) # Renamed agent method

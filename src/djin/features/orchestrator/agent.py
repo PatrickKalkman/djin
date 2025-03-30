@@ -110,17 +110,20 @@ class OrchestratorAgent:
                     return f"No tasks found that were worked on for {display_date}."
 
 
-            # 2. Extract titles/summaries from the retrieved tasks
-            titles = [task.get("summary", "Untitled Task") for task in tasks if isinstance(task, dict)]
-            if not titles:
+            # 2. Extract keys and titles/summaries from the retrieved tasks
+            tasks_data = [
+                {"key": task.get("key"), "summary": task.get("summary", "Untitled Task")}
+                for task in tasks if isinstance(task, dict) and task.get("key")
+            ]
+            if not tasks_data:
                  # This case should be unlikely if 'tasks' is not empty, but handle defensively
-                 logger.warning(f"Found tasks for {display_date}, but could not extract summaries.")
-                 return f"Found tasks for {display_date}, but could not extract summaries."
+                 logger.warning(f"Found tasks for {display_date}, but could not extract keys/summaries.")
+                 return f"Found tasks for {display_date}, but could not extract keys or summaries."
 
-            logger.info(f"Found {len(titles)} task summaries to summarize for {display_date}.")
+            logger.info(f"Found {len(tasks_data)} tasks with keys and summaries to summarize for {display_date}.")
 
-            # 3. Summarize using TextSynthAPI
-            summary = self._textsynth_api.summarize_titles(titles)
+            # 3. Summarize using TextSynthAPI, passing both keys and titles
+            summary = self._textsynth_api.summarize_tasks(tasks_data) # Renamed method for clarity
             logger.info(f"Generated work summary for {display_date}: {summary}")
 
             return summary
