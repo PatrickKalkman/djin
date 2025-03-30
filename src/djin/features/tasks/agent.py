@@ -4,12 +4,13 @@ Task agent for Djin.
 
 This module provides an agent specialized in task operations.
 """
-import logging
 from typing import Any, Dict, List, Optional # Added List, Optional, Dict, Any
+
+from loguru import logger # Import Loguru logger
 
 from djin.features.tasks.graph.workflow import create_task_fetching_graph
 
-logger = logging.getLogger("djin.tasks.agent")
+# Loguru logger is imported directly
 
 class TaskAgent:
     def __init__(self):

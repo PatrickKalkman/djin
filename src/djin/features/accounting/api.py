@@ -1,12 +1,13 @@
 """
 Public API for the accounting agent.
 """
-import logging
 from typing import Any, Dict
+
+from loguru import logger # Import Loguru logger
 
 from djin.features.accounting.agent import AccountingAgent
 
-logger = logging.getLogger("djin.accounting.api")
+# Loguru logger is imported directly
 
 # Singleton instance
 _accounting_agent_api = None

@@ -4,9 +4,10 @@ Jira client for Djin.
 This module provides functions for connecting to Jira and managing stories and tasks.
 """
 
-import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
+
+from loguru import logger # Import Loguru logger
 
 from jira import JIRA
 from rich.console import Console
@@ -19,8 +20,7 @@ from djin.common.errors import JiraError
 # Set up rich console
 console = Console()
 
-# Set up logging
-logger = logging.getLogger("djin.jira")
+# Loguru logger is imported directly
 
 # Global Jira client instance
 jira_client: Optional[JIRA] = None

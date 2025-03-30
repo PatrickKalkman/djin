@@ -2,9 +2,9 @@
 Command handlers for accounting features.
 """
 
-import logging
 from typing import List
 
+from loguru import logger # Import Loguru logger
 from rich.console import Console
 
 from djin.cli.commands import register_command
@@ -15,7 +15,7 @@ from djin.features.accounting.api import get_accounting_api
 
 # Create console for rich output
 console = Console()
-logger = logging.getLogger("djin.accounting.commands")
+# Loguru logger is imported directly
 
 
 # --- Command Handlers ---

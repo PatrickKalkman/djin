@@ -1,13 +1,14 @@
 """
 Node definitions for accounting workflows.
 """
-import logging
 from datetime import datetime
+
+from loguru import logger # Import Loguru logger
 
 # Placeholder for actual TagUI client import
 # from djin.features.accounting.tagui_client import register_hours_on_website
 
-logger = logging.getLogger("djin.accounting.graph")
+# Loguru logger is imported directly
 
 
 def validate_input_node(state):

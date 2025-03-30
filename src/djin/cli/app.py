@@ -2,10 +2,11 @@
 Main CLI application loop for Djin.
 """
 
-import logging
 import pathlib
 import shlex  # Import shlex for robust splitting
 import sys
+
+from loguru import logger # Import Loguru logger
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
@@ -35,7 +36,7 @@ from djin.features.textsynth.commands import register_textsynth_commands
 
 # Create console for rich output
 console = Console()
-logger = logging.getLogger("djin.cli.app")  # Added logger
+# Loguru logger is imported directly
 
 # Style for the prompt
 style = Style.from_dict(

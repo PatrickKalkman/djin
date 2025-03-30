@@ -1,8 +1,7 @@
 """
 Workflow definitions for accounting operations.
 """
-import logging
-
+from loguru import logger # Import Loguru logger
 from langgraph.graph import END, StateGraph
 
 from djin.features.accounting.graph.nodes import (
@@ -12,7 +11,7 @@ from djin.features.accounting.graph.nodes import (
 )
 from djin.features.accounting.graph.state import RegisterHoursState
 
-logger = logging.getLogger("djin.accounting.workflow")
+# Loguru logger is imported directly
 
 
 def create_register_hours_graph():

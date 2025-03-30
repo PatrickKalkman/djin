@@ -2,9 +2,10 @@
 Command handlers for Jira task management.
 """
 
-import logging
 from datetime import datetime # Added import
 from typing import List # Added import
+
+from loguru import logger # Import Loguru logger
 
 from rich.console import Console
 
@@ -16,7 +17,7 @@ from djin.features.tasks.jira_client import JiraError
 
 # Create console for rich output
 console = Console()
-logger = logging.getLogger("djin.tasks.commands") # Define logger at module level
+# Loguru logger is imported directly
 # Removed task_agent = TaskAgent()
 
 
