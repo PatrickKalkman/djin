@@ -268,15 +268,12 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
                 logger.error(f"Screenshot saved to: {screenshot_path}")
                 raise MoneyMonkError(error_msg)
 
-            # Fill hours
+            # 1. Fill hours first
             logger.debug(f"Filling hours: {hours}")
             page.fill(time_input, str(hours))
+            page.wait_for_timeout(300)  # Short wait after filling hours
 
-            # Fill description
-            logger.debug(f"Filling description: {description}")
-            page.fill(desc_selector, description)
-
-            # Select project by selecting the second option in the dropdown
+            # 2. Select project by selecting the second option in the dropdown
             logger.debug("Selecting project by choosing the second option in dropdown")
             logger.debug(f"Clicking project dropdown trigger: {project_dropdown_trigger}")
             page.click(project_dropdown_trigger)
@@ -329,6 +326,11 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
                 page.screenshot(path=str(screenshot_path))
                 logger.warning(f"Screenshot saved to: {screenshot_path}")
                 # Continue anyway - the selection might still be valid
+            
+            # 3. Now fill description (after project selection)
+            logger.debug(f"Filling description: {description}")
+            page.fill(desc_selector, description)
+            page.wait_for_timeout(300)  # Short wait after filling description
 
             # Take screenshot before submission
             screenshot_path = Path("~/.Djin/logs/before_submit.png").expanduser()
