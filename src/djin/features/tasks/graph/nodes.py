@@ -104,25 +104,24 @@ def process_tasks_node(state):
     return {"processed_tasks": processed_tasks}
 
 
-# Node for formatting output
+# Node for formatting output (now primarily prepares data, not visual output)
 def format_output_node(state):
-    """Format the tasks for display"""
-    from rich.console import Console
-
-    # Capture the output as a string
-    console = Console(record=True)
-    
-    # Handle task details differently
+    """Finalize the state, potentially adding messages or handling errors."""
+    # For task_details and set_status, we still need formatted output for direct display
     if state.request_type == "task_details":
+        from rich.console import Console
         from djin.features.tasks.display import format_task_details
+        console = Console(record=True)
         if state.processed_tasks:
-            # Format the single task details
-            task_details = format_task_details(state.processed_tasks[0])
-            console.print(task_details)
+            task_details_table = format_task_details(state.processed_tasks[0])
+            console.print(task_details_table)
         else:
             console.print(f"[red]No details found for issue {state.issue_key}[/red]")
+        return {"formatted_output": console.export_text(), "processed_tasks": state.processed_tasks, "errors": state.errors}
+
     elif state.request_type == "set_status":
-        # Handle set_status request
+        from rich.console import Console
+        console = Console(record=True)
         if state.processed_tasks:
             task = state.processed_tasks[0]
             if task.get("transition_success", False):
@@ -131,71 +130,34 @@ def format_output_node(state):
                 error_msg = task.get("transition_error", "Unknown error")
                 console.print(f"[red]Error transitioning {task['key']}: {error_msg}[/red]")
         else:
-            console.print(f"[red]No details found for issue {state.issue_key}[/red]")
-    else:
-        # Format the tasks as a table with appropriate title based on request type
-        title = "My Tasks"
-        if state.request_type == "todo":
-            title = "My To Do Tasks"
-        elif state.request_type == "in_progress":
-            title = "My In Progress Tasks"
-        elif state.request_type == "active":
-            title = "My Active Tasks"
-        elif state.request_type == "worked_on":
-            date_display = state.date if state.date else "Today"
-            title = f"Tasks I Worked On ({date_display})"
-            
-            # If no tasks found, provide a more helpful message
-            if not state.processed_tasks:
-                console.print(f"[yellow]No tasks found that you worked on {date_display}.[/yellow]")
-                console.print("[yellow]This could be because:[/yellow]")
-                console.print("  [cyan]• You didn't log any work for this date in Jira[/cyan]")
-                console.print("  [cyan]• You didn't transition any tasks to 'In Progress' on this date[/cyan]")
-                console.print("  [cyan]• You didn't update any assigned tasks on this date[/cyan]")
-                console.print("  [cyan]• You didn't resolve any tasks on this date[/cyan]")
-                console.print("")
-                console.print("[yellow]As a fallback, here are your current In Progress tasks:[/yellow]")
-                
-                # Get current in-progress tasks as a fallback
-                from djin.features.tasks.jira_client import get_my_issues
-                status_filter = "status = 'In Progress'"
-                in_progress_tasks = get_my_issues(status_filter=status_filter)
-                
-                # Process these tasks
-                fallback_tasks = []
-                for issue in in_progress_tasks:
-                    fallback_tasks.append(
-                        {
-                            "key": issue.key,
-                            "summary": issue.fields.summary,
-                            "status": issue.fields.status.name,
-                            "type": issue.fields.issuetype.name,
-                            "priority": getattr(issue.fields.priority, "name", "Unknown"),
-                            "assignee": getattr(issue.fields.assignee, "displayName", "Unassigned")
-                            if hasattr(issue.fields, "assignee")
-                            else "Unassigned",
-                            "worklog_seconds": getattr(issue, "worklog_seconds", 0),
-                        }
-                    )
-                
-                # Display these tasks
-                if fallback_tasks:
-                    fallback_table = format_tasks_table(fallback_tasks, title="Current In Progress Tasks")
-                    console.print(fallback_table)
-                else:
-                    console.print("[yellow]You don't have any tasks in progress currently.[/yellow]")
-                
-                return {"formatted_output": console.export_text()}
-            else:
-                console.print("[cyan]Showing tasks that you:[/cyan]")
-                console.print("  [green]• Logged time on[/green]")
-                console.print("  [green]• Updated or worked on[/green]")
-                console.print("  [green]• Were assigned today[/green]")
-                console.print("  [green]• Resolved today[/green]")
-        elif state.request_type == "completed":
-            title = f"My Completed Tasks (Last {state.days} Days)"
+            # This case might indicate an error fetching the task before transitioning
+            console.print(f"[red]Could not retrieve details for issue {state.issue_key} to attempt transition.[/red]")
+            # Add error to state if not already present
+            if not any(f"Could not retrieve details for issue {state.issue_key}" in err for err in state.errors):
+                 state.errors.append(f"Could not retrieve details for issue {state.issue_key} before transition.")
 
-        table = format_tasks_table(state.processed_tasks, title=title)
-        console.print(table)
+        return {"formatted_output": console.export_text(), "processed_tasks": state.processed_tasks, "errors": state.errors}
 
-    return {"formatted_output": console.export_text()}
+    # For list-based requests, just pass through the processed tasks and errors.
+    # The command layer will handle formatting the table.
+    # We can add specific messages here if needed.
+    elif state.request_type == "worked_on" and not state.processed_tasks:
+        # Add a specific message if no 'worked_on' tasks were found
+        date_display = state.date if state.date else "today"
+        message = (
+            f"No tasks found that you worked on {date_display}.\n"
+            "This could be because:\n"
+            "  • You didn't log any work for this date in Jira\n"
+            "  • You didn't transition any tasks to 'In Progress' on this date\n"
+            "  • You didn't update any assigned tasks on this date\n"
+            "  • You didn't resolve any tasks on this date"
+        )
+        # Optionally, you could fetch fallback tasks here, but it might be cleaner
+        # to let the command layer decide if it wants to show a fallback.
+        # For now, just return the message in the errors list or a dedicated message field.
+        # Let's add it to errors for simplicity.
+        state.errors.append(message)
+
+    # Return the state, ensuring processed_tasks and errors are passed through.
+    # formatted_output will be empty for list-based requests now.
+    return {"processed_tasks": state.processed_tasks, "errors": state.errors, "formatted_output": ""}
