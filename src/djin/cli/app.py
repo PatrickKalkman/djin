@@ -19,7 +19,7 @@ from djin.__version__ import __version__ as VERSION
 from djin.cli.commands import exit_command, help_command, register_command, route_command
 
 # Import the registration functions from feature modules
-from djin.features.notes.commands import register_note_commands
+from djin.features.notes.commands import add_note_command, register_note_commands
 from djin.features.textsynth.commands import register_textsynth_commands
 
 # from djin.features.orchestrator.commands import register_orchestrator_commands
@@ -169,7 +169,8 @@ def main_loop():
             else:
                 # Handle plain text (add as note)
                 console.print("[cyan]Adding note:[/cyan]", text)  # Give feedback
-                add_note(text)
+                # Pass the text as a list of arguments to the command function
+                add_note_command([text])
 
         except KeyboardInterrupt:
             # Handle Ctrl+C
