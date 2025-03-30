@@ -60,7 +60,7 @@ def validate_input_node(state):
 
 
 def register_hours_node(state):
-    """Execute the TagUI script to register hours."""
+    """Execute the Playwright automation to register hours."""
     # Check if validation failed in the previous step
     if state.validation_errors:
         logger.warning("Skipping hour registration due to previous validation errors.")
@@ -71,6 +71,7 @@ def register_hours_node(state):
 
     logger.info(f"Attempting to register hours for {state.date} via Playwright.")
     # Default to non-headless mode so user can see what's happening
+    # This could be made configurable through the state if needed
     headless = False
     try:
         # Call the actual Playwright client function

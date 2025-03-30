@@ -64,6 +64,12 @@ def register_hours_command(args: List[str]) -> bool:
     date_str = args[0]
     hours_str = args[1]
     description = " ".join(args[2:])
+    
+    # Add --headless flag option
+    headless = "--headless" in args
+    if headless:
+        # Remove the flag from the description if it was included there
+        description = description.replace("--headless", "").strip()
 
     console.print(
         f"[cyan]Attempting to register {hours_str} hours for {date_str} with description: '{description}'...[/cyan]"

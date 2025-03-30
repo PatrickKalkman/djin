@@ -336,10 +336,20 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             logger.info("Login successful, proceeding to hour registration.")
             
             # 2. Navigate to the hour registration page
-            registration_url = os.environ.get("BASE_TIME_ENTRY_URL")
-            if not registration_url:
-                # Fall back to constructing URL from base URL
-                registration_url = f"{login_url}/path/to/hour/registration"  # <-- Replace this URL
+            # Format the URL with the date parameter
+            from datetime import datetime
+            
+            # Use the provided date or today's date if not specified
+            entry_date = date if date else datetime.now().strftime("%Y-%m-%d")
+            
+            # Get the base URL from environment or construct it
+            base_time_entry_url = os.environ.get("BASE_TIME_ENTRY_URL")
+            if not base_time_entry_url:
+                # Construct the URL with the correct format for MoneyMonk
+                base_time_entry_url = "https://app.moneymonk.nl/v2/administrations/9601/time/entry"
+            
+            # Add the date parameter
+            registration_url = f"{base_time_entry_url}?date={entry_date}"
             
             logger.debug(f"Navigating to hour registration page: {registration_url}")
             page.goto(registration_url)
@@ -353,12 +363,22 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             page.screenshot(path=str(screenshot_path))
             logger.debug(f"Screenshot of registration page saved to {screenshot_path}")
             
-            # 3. Fill in the form
-            # Replace these selectors with the actual ones from the MoneyMonk UI
-            date_selector = "#date-input"  # <-- Replace selector
-            desc_selector = "#description-textarea"  # <-- Replace selector
-            hours_selector = "#hours-input"  # <-- Replace selector
-            submit_button_selector = "button[type='submit']"  # <-- Replace selector
+            # 3. Fill in the form with MoneyMonk's actual selectors
+            # The date is already set in the URL, so we don't need to fill it in the form
+            
+            # Look for the "Add time entry" button and click it
+            add_entry_button = "button:has-text('Add time entry')"
+            logger.debug("Looking for 'Add time entry' button...")
+            
+            if page.is_visible(add_entry_button):
+                logger.debug("Clicking 'Add time entry' button...")
+                page.click(add_entry_button)
+                page.wait_for_timeout(1000)  # Wait for modal to appear
+            
+            # Now fill in the form in the modal
+            desc_selector = "textarea[placeholder='Description']"
+            hours_selector = "input[placeholder='Hours']"
+            submit_button_selector = "button:has-text('Save')"
             
             # Log the current page content for debugging
             logger.debug(f"Current page content: {page.content()}")
@@ -411,28 +431,63 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             logger.debug(f"Screenshot after submission saved to {screenshot_path}")
             
             # Check for success indicators
-            # This is a placeholder - replace with actual success indicators from MoneyMonk
-            success_indicators = [
-                ".alert-success",
-                ".confirmation-message",
-                "text=successfully registered",
-                "text=Registration successful"
-            ]
+            # In MoneyMonk, success might be indicated by:
+            # 1. The modal closing
+            # 2. The new entry appearing in the list
+            # 3. A toast notification
             
-            for indicator in success_indicators:
-                if page.is_visible(indicator):
-                    logger.info(f"Hour registration successful (found indicator: {indicator}).")
-                    return True
+            # Wait a moment for any animations to complete
+            page.wait_for_timeout(2000)
             
-            # If we don't find explicit success indicators, check if we're still on the form page
-            # If form elements are no longer visible, it might indicate success
-            if not page.is_visible(date_selector) and not page.is_visible(hours_selector):
-                logger.info("Hour registration likely successful (form no longer visible).")
+            # Take a screenshot after submission for verification
+            screenshot_path = Path("~/.Djin/logs/after_submit_final.png").expanduser()
+            page.screenshot(path=str(screenshot_path))
+            logger.debug(f"Final screenshot saved to {screenshot_path}")
+            
+            # Check if the modal is closed (success indicator)
+            if not page.is_visible(desc_selector) and not page.is_visible(hours_selector):
+                logger.info("Hour registration successful (form modal closed).")
+                
+                # Look for the entry in the list (optional verification)
+                try:
+                    # Look for an entry with our description
+                    entry_selector = f"text={description}"
+                    if page.is_visible(entry_selector):
+                        logger.info(f"Found the newly added entry with description: {description}")
+                    else:
+                        logger.info("Entry added but not immediately visible in the list.")
+                except Exception as e:
+                    logger.warning(f"Could not verify entry in list: {e}")
+                
                 return True
             
-            # If we're still on the form page, it might indicate failure
-            logger.error("Hour registration may have failed (still on form page).")
-            raise MoneyMonkError("Hour registration failed: Could not confirm success.")
+            # If we're still seeing the form, it might indicate failure
+            if page.is_visible(desc_selector) or page.is_visible(hours_selector):
+                logger.error("Hour registration failed (form still visible).")
+                
+                # Check for error messages
+                error_selectors = [
+                    ".error-message",
+                    ".alert-error",
+                    "text=Error",
+                    "text=Failed"
+                ]
+                
+                error_message = "Unknown error"
+                for selector in error_selectors:
+                    if page.is_visible(selector):
+                        try:
+                            error_message = page.text_content(selector)
+                            logger.error(f"Error message found: {error_message}")
+                            break
+                        except Exception:
+                            pass
+                
+                raise MoneyMonkError(f"Hour registration failed: {error_message}")
+            
+            # If we can't determine success or failure, assume success
+            logger.info("Hour registration likely successful (no error indicators).")
+            return True
 
     except (ConfigurationError, MoneyMonkError) as e:
         logger.error(f"MoneyMonk hour registration failed: {e}")
