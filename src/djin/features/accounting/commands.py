@@ -138,13 +138,13 @@ def login_command(args: List[str]) -> bool:
             console.print(f"[green]Successfully navigated to time entry page for date: {date_str}[/green]")
             console.print(f"[green]Screenshot saved to: {screenshot_path}[/green]")
 
-            # Check if we can see the "Add time entry" button
-            add_entry_button = "button:has-text('Add time entry')"
-            if page.is_visible(add_entry_button):
-                console.print("[green]Time entry page loaded successfully (Add time entry button visible).[/green]")
+            # Check if we can see the time input field which indicates we're on the registration page
+            time_input = "input#time"
+            if page.is_visible(time_input):
+                console.print("[green]Time entry page loaded successfully (time input field visible).[/green]")
             else:
                 console.print(
-                    "[yellow]Time entry page may not have loaded correctly (Add time entry button not found).[/yellow]"
+                    "[yellow]Time entry page may not have loaded correctly (time input field not found).[/yellow]"
                 )
 
             return True

@@ -361,6 +361,16 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             # 3. Fill in the form with MoneyMonk's actual selectors
             # The date is already set in the URL, so we don't need to fill it in the form
 
+            # Check if we're on the registration page by looking for the time input
+            time_input = "input#time"
+            logger.debug("Checking if we're on the registration page by looking for time input...")
+            
+            if not page.is_visible(time_input):
+                logger.warning("Time input field not found. May not be on the correct registration page.")
+                screenshot_path = Path("~/.Djin/logs/page_verification.png").expanduser()
+                page.screenshot(path=str(screenshot_path))
+                logger.debug(f"Screenshot saved to {screenshot_path}")
+            
             # Look for the "Add time entry" button and click it
             add_entry_button = "button:has-text('Add time entry')"
             logger.debug("Looking for 'Add time entry' button...")
