@@ -21,8 +21,8 @@ from djin.cli.commands import exit_command, help_command, register_command, rout
 # Import the registration functions from feature modules
 from djin.features.notes.commands import add_note_command, register_note_commands
 from djin.features.textsynth.commands import register_textsynth_commands
+from djin.features.orchestrator.commands import register_orchestrator_commands
 
-# from djin.features.orchestrator.commands import register_orchestrator_commands
 # Import database initialization if you want to do it once at startup
 from djin.features.notes.db.schema import init_database as init_notes_db
 from djin.features.tasks.commands import register_task_commands
@@ -107,7 +107,7 @@ def register_all_commands():
     register_note_commands()
     register_task_commands()
     register_textsynth_commands()
-    # register_orchestrator_commands() # Uncomment when implemented
+    register_orchestrator_commands()
 
     logger.info("All commands registered.")
 

@@ -70,15 +70,19 @@ def summarize_command(args):
         return False
 
 
-# Register orchestrator commands
-register_command(
-    "overview",
-    overview_command,
-    "Show an overview of your tasks",
-)
+def register_orchestrator_commands():
+    """Registers all commands related to the orchestrator feature."""
+    import logging  # Import logging here or at the top level
 
-register_command(
-    "summarize",
-    summarize_command,
-    "Generate a summary of your tasks. Optional: specify number of days to look back (default: 7)",
-)
+    logger = logging.getLogger("djin.orchestrator.commands")
+
+    commands_to_register = {
+        "overview": (overview_command, "Show an overview of your tasks"),
+        "summarize": (
+            summarize_command,
+            "Generate a summary of your tasks. Optional: specify number of days to look back (default: 7)",
+        ),
+    }
+    for name, (func, help_text) in commands_to_register.items():
+        register_command(name, func, help_text)
+    logger.info(f"Orchestrator commands registered: {list(commands_to_register.keys())}")
