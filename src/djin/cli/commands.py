@@ -25,18 +25,25 @@ def register_command(name, func, help_text):
     logger.info(f"Registered command: {name} -> {func.__module__}.{func.__name__}")
 
 
-def route_command(cmd_name, args):
-    """Route a command to its handler."""
-    # Check for subcommands (e.g., "tasks completed")
-    full_cmd = f"{cmd_name} {args[0]}" if args else cmd_name
+def route_command(cmd_name: str, args: list[str]):
+    """Route a command to its handler, handling subcommands and arguments."""
+    logger.debug(f"Routing command: '{cmd_name}' with args: {args}")
 
-    if full_cmd in commands:
-        # If the full command (with first arg) is registered, use it
-        return commands[full_cmd]["func"](args[1:] if args else [])
+    # Check if the command combined with the first argument is a registered command (subcommand)
+    potential_subcommand = f"{cmd_name} {args[0]}" if args else None
+    logger.debug(f"Checking for potential subcommand: '{potential_subcommand}'")
+
+    if potential_subcommand and potential_subcommand in commands:
+        # It's a subcommand (e.g., "tasks todo")
+        logger.info(f"Found subcommand: '{potential_subcommand}', routing with args: {args[1:]}")
+        return commands[potential_subcommand]["func"](args[1:])
     elif cmd_name in commands:
-        # Otherwise use just the first part
+        # It's a base command with potential arguments (e.g., "tasks JIR-123" or just "tasks")
+        logger.info(f"Found base command: '{cmd_name}', routing with args: {args}")
         return commands[cmd_name]["func"](args)
     else:
+        # Command not found
+        logger.warning(f"Unknown command: '{cmd_name}'")
         console.print(f"[red]Unknown command: {cmd_name}[/red]")
         console.print("Type [bold]/help[/bold] for available commands.")
         return False
