@@ -110,6 +110,6 @@ def retry_operation(operation, max_retries=3, retry_delay=1, error_types=(Except
                 raise
 
             delay = retry_delay * (2 ** (retries - 1))
-            log_error(e, level=logging.WARNING)
+            log_error(e, level="WARNING") # Use Loguru level string
             console.print(f"[yellow]Operation failed, retrying in {delay} seconds...[/yellow]")
             time.sleep(delay)
