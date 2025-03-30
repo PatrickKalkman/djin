@@ -5,6 +5,7 @@ This module contains the logic to automate browser interactions
 for tasks like registering hours on platforms like MoneyMonk using Playwright.
 """
 import contextlib # Use contextlib for managing Playwright instance
+from pathlib import Path # Import Path for handling file paths
 
 import keyring  # Import keyring
 import pyotp
