@@ -59,6 +59,7 @@ def configure_logging():
         retention="1 week",  # Keep logs for 1 week
         compression="zip",  # Compress rotated files
         format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
+        colorize=True, # Added colorize=True for file logging
         # Use enqueue=True for async logging if needed, especially in threaded/multi-process apps
         # enqueue=True,
     )
