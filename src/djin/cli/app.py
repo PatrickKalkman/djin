@@ -2,8 +2,9 @@
 Main CLI application loop for Djin.
 """
 
-import logging  # Added logging import
+import logging
 import pathlib
+import shlex  # Import shlex for robust splitting
 import sys
 
 from prompt_toolkit import PromptSession
@@ -56,25 +57,36 @@ def display_welcome():
     console.print("Type /help for available commands.")
 
 
-def process_command(command):
-    """Process a slash command."""
-    cmd_parts = command[1:].split()  # Remove the slash and split
+def process_command(command_string: str):
+    """Process a slash command using shlex for robust parsing."""
+    logger.debug(f"Processing command string: '{command_string}'")
+    # Remove the leading slash and split using shlex
+    try:
+        cmd_parts = shlex.split(command_string[1:])
+        logger.debug(f"Command parts after shlex split: {cmd_parts}")
+    except ValueError as e:
+        logger.error(f"Error parsing command string: {e}")
+        console.print(f"[red]Error parsing command: {e}[/red]")
+        return
 
     if not cmd_parts:
+        logger.warning("Empty command received after stripping slash.")
         console.print("[red]Error: Empty command[/red]")
         return
 
+    # The first part is the potential command or start of a multi-word command
     cmd_name = cmd_parts[0].lower()
-    # If command has subcommands, join them for lookup, e.g., "note add"
-    full_cmd_name = " ".join(cmd_parts[:2]) if len(cmd_parts) > 1 else cmd_name
-    args = cmd_parts[1:]  # Pass all parts after the first as args initially
+    args = cmd_parts[1:]  # All subsequent parts are arguments
+
+    logger.debug(f"Attempting to route command: '{cmd_name}' with args: {args}")
 
     # Use the command router from commands.py
-    # The router will handle finding the correct command (simple or compound)
-    result = route_command(full_cmd_name, args)  # Keep routing simple for now
+    # route_command will handle checking for subcommands (e.g., "tasks todo")
+    result = route_command(cmd_name, args)
 
     # Handle exit command
     if result == "EXIT":
+        logger.info("Exit command received.")
         console.print("Goodbye! 👋")
         sys.exit(0)
 
