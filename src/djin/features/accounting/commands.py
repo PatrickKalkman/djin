@@ -8,12 +8,18 @@ from loguru import logger  # Import Loguru logger
 from rich.console import Console
 
 from djin.cli.commands import register_command
-from djin.common.errors import DjinError, MoneyMonkError, ConfigurationError, handle_error # Added MoneyMonkError, ConfigurationError
-# Import from the new playwright client
-from djin.features.accounting.playwright_client import login_to_moneymonk
+from djin.common.errors import (  # Added MoneyMonkError, ConfigurationError
+    ConfigurationError,
+    DjinError,
+    MoneyMonkError,
+    handle_error,
+)
 
 # Import the API to interact with the agent/workflow
 from djin.features.accounting.api import get_accounting_api
+
+# Import from the new playwright client
+from djin.features.accounting.playwright_client import login_to_moneymonk
 
 # Create console for rich output
 console = Console()
@@ -21,6 +27,7 @@ console = Console()
 
 
 # --- Command Handlers ---
+
 
 def login_command(args: List[str]) -> bool:
     """Test the MoneyMonk login process using Playwright."""
@@ -41,7 +48,7 @@ def login_command(args: List[str]) -> bool:
             return False
     except (ConfigurationError, MoneyMonkError) as e:
         # Handle specific errors related to config or Playwright execution
-        handle_error(e) # display_error is called within handle_error
+        handle_error(e)  # display_error is called within handle_error
         return False
     except Exception as e:
         # Handle unexpected errors
@@ -64,7 +71,7 @@ def register_hours_command(args: List[str]) -> bool:
     date_str = args[0]
     hours_str = args[1]
     description = " ".join(args[2:])
-    
+
     # Add --headless flag option
     headless = "--headless" in args
     if headless:
