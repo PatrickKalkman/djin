@@ -35,10 +35,7 @@ def add_note_command(args: List[str]) -> bool:
         init_database()
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO notes (type, content) VALUES (?, ?)",
-            ("note", note_text)
-        )
+        cursor.execute("INSERT INTO notes (type, content) VALUES (?, ?)", ("note", note_text))
         conn.commit()
         note_id = cursor.lastrowid
         logger.info(f"Added note with ID {note_id}")
@@ -57,29 +54,22 @@ def list_notes_command(args: List[str]) -> bool:
         init_database()
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, created_at, type, content FROM notes ORDER BY created_at DESC LIMIT 20"
-        )
+        cursor.execute("SELECT id, created_at, type, content FROM notes ORDER BY created_at DESC LIMIT 20")
         notes = cursor.fetchall()
-        
+
         if not notes:
             console.print("[yellow]No notes found[/yellow]")
             return True
-            
+
         table = Table(title="Notes")
         table.add_column("ID", style="cyan")
         table.add_column("Created", style="green")
         table.add_column("Type", style="magenta")
         table.add_column("Content")
-        
+
         for note in notes:
-            table.add_row(
-                str(note[0]),
-                note[1],
-                note[2],
-                note[3][:100] + ("..." if len(note[3]) > 100 else "")
-            )
-            
+            table.add_row(str(note[0]), note[1], note[2], note[3][:100] + ("..." if len(note[3]) > 100 else ""))
+
         console.print(table)
         return True
     except Exception as e:
@@ -94,34 +84,28 @@ def view_note_command(args: List[str]) -> bool:
         console.print("[red]Error: Note ID is required[/red]")
         console.print("Usage: /note view <id>")
         return False
-        
+
     try:
         note_id = int(args[0])
     except ValueError:
         console.print("[red]Error: Note ID must be a number[/red]")
         return False
-        
+
     try:
         # Ensure DB is initialized before first use in a command
         init_database()
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, created_at, type, content FROM notes WHERE id = ?",
-            (note_id,)
-        )
+        cursor.execute("SELECT id, created_at, type, content FROM notes WHERE id = ?", (note_id,))
         note = cursor.fetchone()
-        
+
         if not note:
             console.print(f"[yellow]Note with ID {note_id} not found[/yellow]")
             return False
-            
-        console.print(Panel(
-            note[3],
-            title=f"Note #{note[0]} ({note[1]})",
-            subtitle=f"Type: {note[2]}",
-            border_style="green"
-        ))
+
+        console.print(
+            Panel(note[3], title=f"Note #{note[0]} ({note[1]})", subtitle=f"Type: {note[2]}", border_style="green")
+        )
         return True
     except Exception as e:
         logger.error(f"Error viewing note: {str(e)}")
@@ -149,21 +133,21 @@ def debug_notes_db_command(args: List[str]) -> bool:
         # Get table schema
         cursor.execute("PRAGMA table_info(notes)")
         schema = cursor.fetchall()
-        
+
         table = Table(title="Notes Table Schema")
         table.add_column("Column", style="cyan")
         table.add_column("Type", style="green")
         table.add_column("NotNull", style="magenta")
         table.add_column("Default", style="yellow")
-        
+
         for col in schema:
             table.add_row(
                 col[1],  # name
                 col[2],  # type
                 str(col[3]),  # notnull
-                str(col[4])   # default
+                str(col[4]),  # default
             )
-            
+
         console.print(table)
         return True
     except Exception as e:
@@ -178,13 +162,13 @@ def delete_note_command(args: List[str]) -> bool:
         console.print("[red]Error: Note ID is required[/red]")
         console.print("Usage: /note delete <id>")
         return False
-        
+
     try:
         note_id = int(args[0])
     except ValueError:
         console.print("[red]Error: Note ID must be a number[/red]")
         return False
-        
+
     try:
         # Ensure DB is initialized before first use in a command
         init_database()
@@ -194,7 +178,7 @@ def delete_note_command(args: List[str]) -> bool:
         if not cursor.fetchone():
             console.print(f"[yellow]Note with ID {note_id} not found[/yellow]")
             return False
-            
+
         cursor.execute("DELETE FROM notes WHERE id = ?", (note_id,))
         conn.commit()
         logger.info(f"Deleted note with ID {note_id}")
@@ -211,7 +195,7 @@ def note_command(args: List[str]) -> bool:
     if not args:
         # Default to listing notes if no subcommand
         return list_notes_command([])
-        
+
     subcommand = args[0].lower()
     if subcommand == "add":
         return add_note_command(args[1:])
@@ -226,7 +210,9 @@ def note_command(args: List[str]) -> bool:
         console.print("Available subcommands: add, list, view, delete")
         return False
 
+
 # --- Registration Function ---
+
 
 def register_note_commands():
     """Registers all commands related to the notes feature."""
@@ -241,7 +227,3 @@ def register_note_commands():
     for name, (func, help_text) in commands_to_register.items():
         register_command(name, func, help_text)
     logger.info(f"Notes commands registered: {list(commands_to_register.keys())}")
-
-# --- Remove Module-Level Side Effects ---
-# Remove the old module-level registration calls
-# Remove the module-level init_database() call

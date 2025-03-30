@@ -2,7 +2,7 @@
 Main CLI application loop for Djin.
 """
 
-import logging # Added logging import
+import logging  # Added logging import
 import pathlib
 import sys
 
@@ -14,22 +14,26 @@ from rich.panel import Panel
 from rich.text import Text
 
 from djin.__version__ import __version__ as VERSION
+
 # Import the command router and core command registration (if you create one)
-from djin.cli.commands import route_command, register_command, help_command, exit_command, debug_commands
+from djin.cli.commands import exit_command, help_command, register_command, route_command
+
 # Import the registration functions from feature modules
 from djin.features.notes.commands import register_note_commands
-# Import other feature command registration functions here as you create them
-# from djin.features.tasks.commands import register_task_commands
+
 # from djin.features.textsynth.commands import register_textsynth_commands
 # from djin.features.orchestrator.commands import register_orchestrator_commands
-
 # Import database initialization if you want to do it once at startup
 from djin.features.notes.db.schema import init_database as init_notes_db
+from djin.features.tasks.commands import register_task_commands
+
+# Import other feature command registration functions here as you create them
+
 # Import other initializers if needed
 
 # Create console for rich output
 console = Console()
-logger = logging.getLogger("djin.cli.app") # Added logger
+logger = logging.getLogger("djin.cli.app")  # Added logger
 
 # Style for the prompt
 style = Style.from_dict(
@@ -63,23 +67,16 @@ def process_command(command):
     cmd_name = cmd_parts[0].lower()
     # If command has subcommands, join them for lookup, e.g., "note add"
     full_cmd_name = " ".join(cmd_parts[:2]) if len(cmd_parts) > 1 else cmd_name
-    args = cmd_parts[1:] # Pass all parts after the first as args initially
+    args = cmd_parts[1:]  # Pass all parts after the first as args initially
 
     # Use the command router from commands.py
     # The router will handle finding the correct command (simple or compound)
-    result = route_command(cmd_name, args) # Keep routing simple for now
+    result = route_command(cmd_name, args)  # Keep routing simple for now
 
     # Handle exit command
     if result == "EXIT":
         console.print("Goodbye! 👋")
         sys.exit(0)
-
-
-def add_note(text):
-    """Add a note using the note command."""
-    # Use the actual command processing logic
-    from djin.features.notes.commands import add_note_command
-    add_note_command(text.split())
 
 
 def show_help():
@@ -105,11 +102,10 @@ def register_all_commands():
     register_command("?", help_command, "Alias for help")
     register_command("exit", exit_command, "Exit Djin")
     register_command("quit", exit_command, "Alias for exit")
-    register_command("debug", debug_commands, "Show debug information")
 
     # Register feature commands
     register_note_commands()
-    # register_task_commands() # Uncomment when implemented
+    register_task_commands()
     # register_textsynth_commands() # Uncomment when implemented
     # register_orchestrator_commands() # Uncomment when implemented
 
@@ -172,7 +168,7 @@ def main_loop():
                 process_command(text)
             else:
                 # Handle plain text (add as note)
-                console.print("[cyan]Adding note:[/cyan]", text) # Give feedback
+                console.print("[cyan]Adding note:[/cyan]", text)  # Give feedback
                 add_note(text)
 
         except KeyboardInterrupt:

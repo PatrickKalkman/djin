@@ -50,21 +50,21 @@ def show_all_commands():
 
     # Log the commands that will be displayed
     logger.debug(f"Commands to display: {list(commands.keys())}")
-    
+
     # Group commands by their top-level command
     command_groups = {}
-    
+
     for cmd_name, cmd_info in commands.items():
         # Split the command name to get the top-level command
         parts = cmd_name.split(" ", 1)
         top_level = parts[0]
-        
+
         if top_level not in command_groups:
             command_groups[top_level] = []
-            
+
         # Add the command to its group
         command_groups[top_level].append((cmd_name, cmd_info))
-    
+
     # Display all commands, grouped by top-level command
     for top_level, cmds in sorted(command_groups.items()):
         # First show the top-level command
@@ -72,7 +72,7 @@ def show_all_commands():
             if cmd_name == top_level:
                 table.add_row(f"/{cmd_name}", cmd_info["help"])
                 break
-        
+
         # Then show all subcommands
         for cmd_name, cmd_info in sorted(cmds):
             if cmd_name != top_level:

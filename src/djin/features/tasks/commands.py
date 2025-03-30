@@ -58,22 +58,24 @@ def worked_on_command(args):
     """Show Jira issues worked on for a specific date."""
     try:
         # Use the API layer to get the tasks agent
-        from djin.features.tasks.api import get_tasks_api
         import logging
+
+        from djin.features.tasks.api import get_tasks_api
 
         logger = logging.getLogger("djin.tasks")
         # Increase logging level temporarily to see more details
         logger.setLevel(logging.INFO)
-        
+
         # Get the tasks API
         tasks_api = get_tasks_api()
-        
+
         # Parse date argument if provided
         date_str = None  # Default to today
         if args and len(args) > 0:
             date_str = args[0]
             # Validate date format
             from datetime import datetime
+
             try:
                 datetime.strptime(date_str, "%Y-%m-%d")
             except ValueError:
@@ -84,10 +86,10 @@ def worked_on_command(args):
         display_date = date_str or "today"
         logger.info(f"Command: Fetching tasks worked on for {display_date}")
         console.print(f"[cyan]Searching for tasks worked on {display_date}...[/cyan]")
-        
+
         # Call the API method to get tasks worked on
         result = tasks_api.get_worked_on_tasks(date_str)
-        
+
         # Reset logging level
         logger.setLevel(logging.WARNING)
 
@@ -96,8 +98,6 @@ def worked_on_command(args):
     except Exception as e:
         console.print(f"[red]Error showing worked on issues: {str(e)}[/red]")
         return False
-
-
 
 
 def completed_command(args):
