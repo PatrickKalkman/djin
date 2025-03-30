@@ -97,32 +97,20 @@ def summarize_titles_command(args):
         return False
 
 
-# Register report commands
-register_command(
-    "report daily",
-    daily_report_command,
-    "Generate a daily report of your tasks",
-)
-logger.info("Registered command: report daily")
-
-register_command(
-    "report weekly",
-    weekly_report_command,
-    "Generate a weekly report of your tasks",
-)
-logger.info("Registered command: report weekly")
-
-register_command(
-    "report custom",
-    custom_report_command,
-    "Generate a custom report of your tasks. Optional: specify number of days to look back (default: 7)",
-)
-logger.info("Registered command: report custom")
-
-# Register text synthesis commands
-register_command(
-    "summarize",
-    summarize_titles_command,
-    "Summarize multiple Jira issue titles. Usage: /summarize 'Title 1' 'Title 2' ...",
-)
-logger.info("Registered command: summarize")
+def register_textsynth_commands():
+    """Registers all commands related to the textsynth feature."""
+    commands_to_register = {
+        "report daily": (daily_report_command, "Generate a daily report of your tasks"),
+        "report weekly": (weekly_report_command, "Generate a weekly report of your tasks"),
+        "report custom": (
+            custom_report_command,
+            "Generate a custom report of your tasks. Optional: specify number of days to look back (default: 7)",
+        ),
+        "summarize": (
+            summarize_titles_command,
+            "Summarize multiple Jira issue titles. Usage: /summarize 'Title 1' 'Title 2' ...",
+        ),
+    }
+    for name, (func, help_text) in commands_to_register.items():
+        register_command(name, func, help_text)
+    logger.info(f"Textsynth commands registered: {list(commands_to_register.keys())}")
