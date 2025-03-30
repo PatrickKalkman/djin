@@ -550,6 +550,26 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
         logger.info(f"Found {len(assigned_issues)} issues assigned on this date")
         all_issues.extend([issue.key for issue in assigned_issues if issue.key not in all_issues])
 
+        # 6. Try with comments added by the user on that day
+        # Note: JQL doesn't directly support comment author and date filtering efficiently.
+        # A more robust solution might involve fetching recent activity streams or iterating issues,
+        # but this JQL is a common approximation, though potentially slow or incomplete on large instances.
+        # It finds issues *updated* during the period where the current user *was* the last commenter.
+        # This isn't perfect but is the best we can do with standard JQL.
+        jql = f"issueFunction in commented('by currentUser() after \"{target_date} 00:00\" before \"{target_date} 23:59\"') ORDER BY updated DESC"
+        # Alternative JQL if issueFunction is not available or too slow:
+        # jql = f"comment ~ currentUser() AND updated >= '{target_date} 00:00' AND updated <= '{target_date} 23:59' ORDER BY updated DESC"
+        # This alternative is less precise as it matches the username anywhere in comments.
+        try:
+            logger.info(f"Executing JQL for comments: {jql}")
+            commented_issues = jira.search_issues(jql, maxResults=50) # Limit results to avoid performance issues
+            logger.info(f"Found {len(commented_issues)} issues potentially commented on (using issueFunction)")
+            all_issues.extend([issue.key for issue in commented_issues if issue.key not in all_issues])
+        except Exception as e:
+             # Log the error but continue, as this JQL might fail depending on Jira setup (e.g., ScriptRunner not installed)
+            logger.warning(f"Could not execute JQL for commented issues: {e}. This might be due to missing JQL functions (like issueFunction). Skipping this check.")
+
+
         # If we have any issues, fetch them all at once with full details
         if all_issues:
             # Remove duplicates while preserving order
