@@ -11,8 +11,6 @@ from djin.cli.app import main_loop
 from djin.common.config import is_configured, setup_config
 from djin.common.errors import handle_error
 
-# from djin.features.tasks.commands import todo_command, active_command, worked_on_command
-
 # Create console for rich output
 console = Console()
 

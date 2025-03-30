@@ -5,9 +5,8 @@ This module provides nodes for text synthesis workflows.
 """
 
 import logging
-from typing import Any, Dict
 
-from djin.features.textsynth.llm.client import ReportLLMClient
+from djin.features.textsynth.llm.client import TextSynthLLMClient
 
 # Set up logging
 logger = logging.getLogger("djin.textsynth.graph")
@@ -58,7 +57,7 @@ def summarize_titles_node(state):
         titles = state.titles
 
         # Create LLM client
-        llm_client = ReportLLMClient()
+        llm_client = TextSynthLLMClient()
 
         # Generate summary
         summary = llm_client.summarize_titles(titles)

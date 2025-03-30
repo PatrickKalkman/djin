@@ -9,7 +9,7 @@ from typing import Any, Dict
 
 from djin.common.errors import DjinError
 from djin.features.tasks.api import TaskAPI
-from djin.features.textsynth.api import ReportAPI
+from djin.features.textsynth.api import TextSynthAPI
 
 # Set up logging
 logger = logging.getLogger("djin.orchestrator")
@@ -21,7 +21,7 @@ class OrchestratorAgent:
     def __init__(self):
         """Initialize the orchestrator agent with necessary APIs."""
         self._task_api = TaskAPI()
-        self._report_api = ReportAPI()
+        self._report_api = TextSynthAPI()
 
     def generate_task_summary(self, days: int = 7) -> str:
         """
