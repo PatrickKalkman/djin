@@ -8,8 +8,6 @@ from loguru import logger  # Import Loguru logger
 
 from djin.features.accounting.agent import AccountingAgent
 
-# Loguru logger is imported directly
-
 # Singleton instance
 _accounting_agent_api = None
 

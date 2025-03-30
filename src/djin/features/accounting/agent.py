@@ -10,8 +10,6 @@ from loguru import logger  # Import Loguru logger
 
 from djin.features.accounting.graph.workflow import create_register_hours_graph
 
-# Loguru logger is imported directly
-
 
 class AccountingAgent:
     """Agent specialized in accounting operations."""
