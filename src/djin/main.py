@@ -44,17 +44,12 @@ def configure_logging():
     # Ensure log directory exists
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Remove default stderr sink
+    # Remove default stderr sink (which logs to stderr)
     logger.remove()
 
-    # Add console sink with level INFO
-    # Use Rich for console logging if desired, or Loguru's default coloring
-    logger.add(
-        sys.stderr,
-        level="INFO",
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-        colorize=True,
-    )
+    # --- Console Sink Removed ---
+    # The logger.add(sys.stderr, ...) block has been removed.
+    # Logs will now primarily go to the file sink defined below.
 
     # Add file sink with level DEBUG, rotation, and compression
     logger.add(
@@ -67,7 +62,7 @@ def configure_logging():
         # Use enqueue=True for async logging if needed, especially in threaded/multi-process apps
         # enqueue=True,
     )
-    logger.info("Logging configured. Console level: INFO, File level: DEBUG")
+    logger.info(f"Logging configured. File logging level: DEBUG at {LOG_FILE}")
 
 
 def main():
