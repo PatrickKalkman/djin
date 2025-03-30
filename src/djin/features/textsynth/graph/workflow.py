@@ -19,16 +19,16 @@ def create_title_summarization_graph():
     """
     # Create a new graph
     graph = StateGraph(SummarizeTitlesState)
-    
+
     # Add nodes
     graph.add_node("prepare_titles", prepare_titles_node)
     graph.add_node("summarize_titles", summarize_titles_node)
-    
+
     # Add edges
     graph.add_edge("prepare_titles", "summarize_titles")
-    
+
     # Set entry point
     graph.set_entry_point("prepare_titles")
-    
+
     # Compile the graph
     return graph.compile()

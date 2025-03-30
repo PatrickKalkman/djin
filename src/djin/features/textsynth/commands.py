@@ -3,6 +3,7 @@ Command handlers for report generation and text synthesis.
 """
 
 import logging
+
 from rich.console import Console
 from rich.panel import Panel
 
@@ -80,16 +81,16 @@ def summarize_titles_command(args):
         if not args:
             console.print("[red]Error: No titles provided. Usage: /summarize 'Title 1' 'Title 2' ...[/red]")
             return False
-            
+
         # Get titles from arguments
         titles = args
-        
+
         # Generate summary
         summary = report_agent.summarize_titles(titles)
-        
+
         # Display summary
         console.print(Panel(summary, title="Title Summary", border_style="green"))
-        
+
         return True
     except Exception as e:
         console.print(f"[red]Error summarizing titles: {str(e)}[/red]")

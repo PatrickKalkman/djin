@@ -1,0 +1,12 @@
+/drop
+/add       src/djin/features/textsynth/__init__.py
+/add       src/djin/features/textsynth/agent.py
+/add       src/djin/features/textsynth/api.py
+/add       src/djin/features/textsynth/commands.py
+/add       src/djin/features/textsynth/graph/nodes.py
+/add       src/djin/features/textsynth/graph/state.py
+/add       src/djin/features/textsynth/graph/workflow.py
+/add       src/djin/features/textsynth/llm/client.py
+/add       src/djin/features/textsynth/llm/prompts.py
+/add       src/djin/features/textsynth/models.py
+/read-only /Users/patrickkalkman/aider/CONVENTIONS.md
