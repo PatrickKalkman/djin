@@ -185,10 +185,9 @@ def login_command(args: List[str]) -> bool:
             time_input = "input#time" # Selector for the time input field
             desc_selector = "input#description" # Selector for description (updated based on HTML)
             project_dropdown_trigger = 'div.react-select__control' # More specific selector for dropdown trigger
-            project_input_selector = 'input#projectId' # The actual input field for filtering
             project_option_selector_base = 'div[class*="react-select__option"]' # Base selector for options
-            project_name_to_select = "AION Titan Streaming PI" # The specific project name
-            specific_project_option_selector = f"{project_option_selector_base}:has-text('{project_name_to_select}')" # Selector for the specific option
+            project_name_to_select = "AION Titan Streaming PI" # The specific project name (for verification)
+            specific_project_option_selector = f"{project_option_selector_base}:has-text('{project_name_to_select}')" # Fallback selector
             selected_project_value_selector = 'div[class*="react-select__single-value"]' # Selector for chosen project display
 
             if page.is_visible(time_input):
@@ -211,22 +210,30 @@ def login_command(args: List[str]) -> bool:
                     logger.debug(f"Filling description: {description}")
                     page.fill(desc_selector, description)
 
-                    # Select project using input filtering
-                    logger.debug(f"Selecting project: {project_name_to_select}")
+                    # Select project by selecting the second option in the dropdown
+                    logger.debug("Selecting project by choosing the second option in dropdown")
                     logger.debug(f"Clicking project dropdown trigger: {project_dropdown_trigger}")
                     page.click(project_dropdown_trigger)
-                    # Wait briefly for dropdown to potentially animate/open
+                    
+                    # Wait for dropdown options to appear
+                    logger.debug("Waiting for dropdown options to appear")
+                    page.wait_for_selector(project_option_selector_base, state='visible', timeout=5000)
+                    
+                    # Get all options and select the second one (index 1)
+                    logger.debug("Selecting the second option from dropdown")
+                    # Wait a moment for all options to be fully loaded
                     page.wait_for_timeout(500)
-
-                    logger.debug(f"Typing project name '{project_name_to_select}' into input: {project_input_selector}")
-                    # Use locator().fill() which is generally more reliable for inputs
-                    page.locator(project_input_selector).fill(project_name_to_select)
-                    # Wait for the specific option to appear after filtering
-                    logger.debug(f"Waiting for specific project option to be visible: {specific_project_option_selector}")
-                    page.wait_for_selector(specific_project_option_selector, state='visible', timeout=5000)
-
-                    logger.debug(f"Clicking specific project option: {project_name_to_select}")
-                    page.click(specific_project_option_selector)
+                    
+                    # Select the second option (index 1, since indexing starts at 0)
+                    all_options = page.query_selector_all(project_option_selector_base)
+                    if len(all_options) >= 2:
+                        logger.debug(f"Found {len(all_options)} options, selecting option #2")
+                        all_options[1].click()
+                    else:
+                        logger.warning(f"Not enough options found in dropdown (found {len(all_options)})")
+                        # Fallback: try to click the first option that contains our target text
+                        logger.debug(f"Falling back to text search for '{project_name_to_select}'")
+                        page.click(specific_project_option_selector)
 
                     # Verify project selection
                     logger.debug(f"Verifying selection using selector: {selected_project_value_selector}")
