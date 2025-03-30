@@ -3,6 +3,7 @@ Command handlers for accounting features.
 """
 
 from typing import List
+from pathlib import Path
 
 from loguru import logger  # Import Loguru logger
 from rich.console import Console
@@ -51,69 +52,77 @@ def login_command(args: List[str]) -> bool:
     console.print(f"[cyan]Attempting to log in to MoneyMonk via Playwright (headless={headless})...[/cyan]")
     
     try:
-        # First login to MoneyMonk
-        success = login_to_moneymonk(headless=headless)
+        # Get the base time entry URL first
+        import os
+        base_time_entry_url = os.environ.get("BASE_TIME_ENTRY_URL")
         
-        if success:
-            console.print("[green]MoneyMonk login successful (verified dashboard access).[/green]")
-            
-            # Now navigate to the time registration page for the specified date
+        if not base_time_entry_url:
+            console.print("[yellow]BASE_TIME_ENTRY_URL not set in environment. Cannot navigate to time registration page.[/yellow]")
+            return False
+        
+        console.print(f"[cyan]Logging in and navigating to time registration page for date: {date_str}[/cyan]")
+        
+        # Create a browser context and handle login + navigation in one session
+        from djin.features.accounting.playwright_client import playwright_context
+        
+        with playwright_context(headless=headless) as page:
+            # Get credentials for login
             import os
-            base_time_entry_url = os.environ.get("BASE_TIME_ENTRY_URL")
+            email = os.environ.get("EMAIL")
+            password = os.environ.get("PASSWORD")
+            totp_secret = os.environ.get("TOTP_SECRET")
+            login_url = os.environ.get("LOGIN_URL")
             
-            if not base_time_entry_url:
-                console.print("[yellow]BASE_TIME_ENTRY_URL not set in environment. Cannot navigate to time registration page.[/yellow]")
-                return True  # Still return success since login worked
+            if not all([email, password, totp_secret, login_url]):
+                creds = _get_moneymonk_credentials()
+                email = email or creds["username"]
+                password = password or creds["password"]
+                totp_secret = totp_secret or creds["totp_secret"]
+                login_url = login_url or creds["url"]
             
-            console.print(f"[cyan]Now navigating to time registration page for date: {date_str}[/cyan]")
+            # Login first
+            logger.debug(f"Navigating to {login_url}")
+            page.goto(login_url)
+            page.wait_for_timeout(2000)
             
-            # Create a new browser context and navigate to the time entry page
-            from djin.features.accounting.playwright_client import playwright_context
+            logger.debug("Entering credentials...")
+            page.fill("#email", email)
+            page.fill("#password", password)
             
-            with playwright_context(headless=headless) as page:
-                # Get credentials for login
-                import os
-                email = os.environ.get("EMAIL")
-                password = os.environ.get("PASSWORD")
-                totp_secret = os.environ.get("TOTP_SECRET")
-                login_url = os.environ.get("LOGIN_URL")
+            logger.debug("Clicking login button...")
+            page.click("button[data-testid='button']")
+            page.wait_for_timeout(2000)
+            
+            # Handle TOTP if needed
+            if page.is_visible("#code"):
+                logger.info("TOTP code entry required.")
+                import pyotp
+                totp_code = pyotp.TOTP(totp_secret).now()
+                logger.info(f"Generated TOTP code: {totp_code}")
                 
-                if not all([email, password, totp_secret, login_url]):
-                    creds = _get_moneymonk_credentials()
-                    email = email or creds["username"]
-                    password = password or creds["password"]
-                    totp_secret = totp_secret or creds["totp_secret"]
-                    login_url = login_url or creds["url"]
-                
-                # Login first
-                logger.debug(f"Navigating to {login_url}")
-                page.goto(login_url)
-                page.wait_for_timeout(2000)
-                
-                logger.debug("Entering credentials...")
-                page.fill("#email", email)
-                page.fill("#password", password)
-                
-                logger.debug("Clicking login button...")
+                page.fill("#code", totp_code)
                 page.click("button[data-testid='button']")
                 page.wait_for_timeout(2000)
-                
-                # Handle TOTP if needed
-                if page.is_visible("#code"):
-                    logger.info("TOTP code entry required.")
-                    import pyotp
-                    totp_code = pyotp.TOTP(totp_secret).now()
-                    logger.info(f"Generated TOTP code: {totp_code}")
-                    
-                    page.fill("#code", totp_code)
-                    page.click("button[data-testid='button']")
-                    page.wait_for_timeout(2000)
+            
+            # Check if login was successful
+            if page.is_visible("#email") or page.is_visible("#password") or page.is_visible("#code"):
+                console.print("[red]Login failed. Still on login or TOTP screen.[/red]")
+                screenshot_path = Path("~/.Djin/logs/login_failure.png").expanduser()
+                screenshot_path.parent.mkdir(parents=True, exist_ok=True)
+                page.screenshot(path=str(screenshot_path))
+                console.print(f"[red]Screenshot saved to: {screenshot_path}[/red]")
+                return False
+            
+            console.print("[green]MoneyMonk login successful.[/green]")
                 
                 # Now navigate to the time entry page with the date parameter
                 registration_url = f"{base_time_entry_url}?date={date_str}"
                 logger.debug(f"Navigating to time registration page: {registration_url}")
                 page.goto(registration_url)
-                page.wait_for_timeout(3000)
+                
+                # Wait longer (10 seconds) to allow for visual inspection
+                console.print("[cyan]Waiting 10 seconds for visual inspection...[/cyan]")
+                page.wait_for_timeout(10000)  # 10 seconds
                 
                 # Take a screenshot of the time entry page
                 from pathlib import Path

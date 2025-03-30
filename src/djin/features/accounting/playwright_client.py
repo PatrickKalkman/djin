@@ -349,8 +349,8 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             logger.debug(f"Navigating to hour registration page: {registration_url}")
             page.goto(registration_url)
 
-            # Add a delay to ensure page is fully loaded
-            page.wait_for_timeout(2000)  # 2 seconds
+            # Add a longer delay to ensure page is fully loaded and visible for inspection
+            page.wait_for_timeout(5000)  # 5 seconds
 
             # Take a screenshot of the registration page for debugging
             screenshot_path = Path("~/.Djin/logs/registration_page.png").expanduser()
