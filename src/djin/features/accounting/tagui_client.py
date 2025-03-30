@@ -1,22 +1,23 @@
 """
-Client for interacting with external websites using TagUI (or similar).
+Client for interacting with external websites using Playwright.
 
-This module will contain the logic to automate browser interactions
-for tasks like registering hours on platforms like MoneyMonk.
+This module contains the logic to automate browser interactions
+for tasks like registering hours on platforms like MoneyMonk using Playwright.
 """
-
-import subprocess
-import time
-from pathlib import Path
+import contextlib # Use contextlib for managing Playwright instance
 
 import keyring  # Import keyring
 import pyotp
 from loguru import logger  # Import Loguru logger
+from playwright.sync_api import sync_playwright, Error as PlaywrightError, TimeoutError as PlaywrightTimeoutError
 
 from djin.common.config import SERVICE_NAME, load_config  # Import SERVICE_NAME and load_config
 from djin.common.errors import ConfigurationError, MoneyMonkError  # Import custom errors
 
 # --- Helper Functions ---
+
+# Timeout for Playwright operations (in milliseconds)
+DEFAULT_TIMEOUT = 30 * 1000 # 30 seconds
 
 
 def _get_moneymonk_credentials():
