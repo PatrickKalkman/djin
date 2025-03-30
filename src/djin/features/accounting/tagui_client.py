@@ -9,6 +9,7 @@ import logging
 
 logger = logging.getLogger("djin.accounting.tagui")
 
+
 # Placeholder function - Implement actual TagUI interaction here
 def register_hours_on_website(date: str, description: str, hours: float) -> bool:
     """

@@ -1,6 +1,7 @@
 """
 Command handlers for accounting features.
 """
+
 import logging
 from typing import List
 
@@ -8,6 +9,7 @@ from rich.console import Console
 
 from djin.cli.commands import register_command
 from djin.common.errors import DjinError, handle_error
+
 # Import the API to interact with the agent/workflow
 from djin.features.accounting.api import get_accounting_api
 
@@ -18,6 +20,7 @@ logger = logging.getLogger("djin.accounting.commands")
 
 # --- Command Handlers ---
 
+
 def register_hours_command(args: List[str]) -> bool:
     """Register hours on an external platform (e.g., MoneyMonk)."""
     logger.debug(f"Received register-hours command with args: {args}")
@@ -25,8 +28,7 @@ def register_hours_command(args: List[str]) -> bool:
     # Expecting: date (YYYY-MM-DD), hours (e.g., 7.5), description (multi-word)
     if len(args) < 3:
         console.print(
-            "[red]Error: Missing arguments.[/red]\n"
-            "Usage: /accounting register-hours <YYYY-MM-DD> <hours> <description>"
+            "[red]Error: Missing arguments.[/red]\nUsage: /accounting register-hours <YYYY-MM-DD> <hours> <description>"
         )
         return False
 
@@ -34,7 +36,9 @@ def register_hours_command(args: List[str]) -> bool:
     hours_str = args[1]
     description = " ".join(args[2:])
 
-    console.print(f"[cyan]Attempting to register {hours_str} hours for {date_str} with description: '{description}'...[/cyan]")
+    console.print(
+        f"[cyan]Attempting to register {hours_str} hours for {date_str} with description: '{description}'...[/cyan]"
+    )
 
     try:
         accounting_api = get_accounting_api()
@@ -59,6 +63,7 @@ def register_hours_command(args: List[str]) -> bool:
 
 # --- Registration Function ---
 
+
 def register_accounting_commands():
     """Registers all commands related to the accounting feature."""
     commands_to_register = {
@@ -71,5 +76,6 @@ def register_accounting_commands():
     for name, (func, help_text) in commands_to_register.items():
         register_command(name, func, help_text)
     logger.info(f"Accounting commands registered: {list(commands_to_register.keys())}")
+
 
 # No module-level side effects for registration
