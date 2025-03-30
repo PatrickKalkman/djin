@@ -17,6 +17,8 @@ from djin.common.errors import (  # Added MoneyMonkError, ConfigurationError
 )
 
 # Import the API to interact with the agent/workflow
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError # Import the specific exception
+
 from djin.features.accounting.api import get_accounting_api
 
 # Import from the new playwright client
