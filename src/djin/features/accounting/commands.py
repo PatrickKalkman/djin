@@ -169,9 +169,9 @@ def login_command(args: List[str]) -> bool:
             logger.debug(f"Navigating to time registration page: {registration_url}")
             page.goto(registration_url)
 
-            # Wait longer (10 seconds) to allow for visual inspection
-            console.print("[cyan]Waiting 10 seconds for visual inspection...[/cyan]")
-            page.wait_for_timeout(10000)  # 10 seconds
+            # Wait briefly to allow for visual inspection
+            console.print("[cyan]Waiting 1 second for visual inspection...[/cyan]")
+            page.wait_for_timeout(1000)  # 1 second
 
             # Take a screenshot of the time entry page
             screenshot_path = Path("~/.Djin/logs/time_entry_page.png").expanduser()
@@ -258,8 +258,8 @@ def login_command(args: List[str]) -> bool:
 
 
                     console.print("[green]Form fields pre-filled successfully.[/green]")
-                    console.print("[cyan]Form NOT submitted. Waiting 10 seconds for visual inspection...[/cyan]")
-                    page.wait_for_timeout(10000) # Keep the wait for inspection
+                    console.print("[cyan]Form NOT submitted. Waiting 1 second for visual inspection...[/cyan]")
+                    page.wait_for_timeout(1000) # Reduced wait time for inspection
 
                 except PlaywrightTimeoutError as pte:
                     logger.error(f"Timeout error during form filling: {pte}")
