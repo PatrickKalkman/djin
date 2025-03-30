@@ -83,14 +83,24 @@ def _run_tagui_script(script_content: str, script_name: str = "temp_script") -> 
             f.write(script_content)
         logger.debug(f"TagUI script written to: {script_path}")
 
+        # Load config to get TagUI path
+        config = load_config()
+        tagui_executable = config.get("tagui", {}).get("path", "tagui") # Default to 'tagui' if not set
+
         # Execute TagUI script
-        # Assumes 'tagui' command is in the system PATH
         # Use -q for quieter execution, remove if debugging needed
-        command = ["tagui", str(script_path), "-q"]
+        command = [tagui_executable, str(script_path), "-q"]
         logger.info(f"Executing TagUI command: {' '.join(command)}")
-        result = subprocess.run(
-            command, capture_output=True, text=True, check=False
-        )  # check=False to handle errors manually
+        try:
+            result = subprocess.run(
+                command, capture_output=True, text=True, check=False, timeout=60 # Added timeout
+            )  # check=False to handle errors manually
+        except FileNotFoundError:
+             logger.error(f"TagUI command '{tagui_executable}' not found. Check config or PATH.")
+             raise MoneyMonkError(f"TagUI command '{tagui_executable}' not found. Please ensure it's installed and the path is configured correctly (run 'djin --setup').")
+        except subprocess.TimeoutExpired:
+            logger.error("TagUI script execution timed out after 60 seconds.")
+            raise MoneyMonkError("TagUI script execution timed out.")
 
         logger.debug(f"TagUI stdout:\n{result.stdout}")
         logger.debug(f"TagUI stderr:\n{result.stderr}")
@@ -111,12 +121,13 @@ def _run_tagui_script(script_content: str, script_name: str = "temp_script") -> 
             logger.info("TagUI script executed successfully.")
             return True
 
-    except FileNotFoundError:
-        logger.error("TagUI command not found. Is TagUI installed and in PATH?")
-        raise MoneyMonkError("TagUI command not found. Please ensure TagUI is installed and accessible in your PATH.")
+    # FileNotFoundError is now caught inside the try block where subprocess.run is called
+    except MoneyMonkError as e: # Catch specific errors raised within the try block
+        logger.error(f"TagUI execution failed: {e}")
+        raise # Re-raise the specific error
     except Exception as e:
-        logger.error(f"An unexpected error occurred during TagUI execution: {e}", exc_info=True)
-        raise MoneyMonkError(f"An unexpected error occurred during TagUI execution: {str(e)}")
+        logger.error(f"An unexpected error occurred during TagUI script execution: {e}", exc_info=True)
+        raise MoneyMonkError(f"An unexpected error occurred during TagUI script execution: {str(e)}")
     finally:
         # Clean up the temporary script file
         if script_path.exists():
