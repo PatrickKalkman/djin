@@ -128,6 +128,7 @@ def playwright_context(headless=False):
 
 # --- Main Functions ---
 
+
 def register_hours_on_website(date: str, description: str, hours: float, headless=True) -> bool:
     """
     Logs into MoneyMonk and registers hours using Playwright.
@@ -188,7 +189,7 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
 
             # Handle TOTP if needed
             # Updated selector based on previous command's findings
-            totp_selector = "#tfaCode" # Use #tfaCode instead of #code
+            totp_selector = "#tfaCode"  # Use #tfaCode instead of #code
             if page.is_visible(totp_selector):
                 logger.info("TOTP code entry required.")
                 totp_code = pyotp.TOTP(totp_secret).now()
@@ -217,7 +218,7 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             registration_url = f"{base_time_entry_url}?date={entry_date}"
             logger.debug(f"Navigating to time registration page: {registration_url}")
             page.goto(registration_url)
-            page.wait_for_timeout(3000) # Slightly longer wait for page load
+            page.wait_for_timeout(3000)  # Slightly longer wait for page load
 
             # --- 3. Fill and Submit Time Entry Form ---
             logger.info("Attempting to fill and submit time entry form...")
@@ -225,28 +226,27 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             # Selectors based on previous command's findings
             add_entry_button = "button:has-text('Add time entry')"
             # Modal selectors
-            hours_selector = "input#time" # Changed from placeholder to ID
-            desc_selector = "textarea#description" # Changed from placeholder to ID
+            hours_selector = "input#time"  # Changed from placeholder to ID
+            desc_selector = "textarea#description"  # Changed from placeholder to ID
             project_dropdown_trigger = "div.react-select__control"
             project_option_selector_base = 'div[class*="react-select__option"]'
-            submit_button_selector = "button[data-testid='button']:has-text('Toevoegen')" # Specific submit button
+            submit_button_selector = "button[data-testid='button']:has-text('Toevoegen')"  # Specific submit button
 
             # Click "Add time entry" button to open the modal
             if page.is_visible(add_entry_button):
                 logger.debug("Clicking 'Add time entry' button...")
                 page.click(add_entry_button)
-                page.wait_for_timeout(1500) # Wait for modal animation
+                page.wait_for_timeout(1500)  # Wait for modal animation
             else:
                 logger.warning("'Add time entry' button not found. Assuming modal is already open or not needed.")
                 # Check if form fields are directly visible
                 if not page.is_visible(hours_selector):
-                     error_msg = "Cannot find 'Add time entry' button or time input field. Cannot proceed."
-                     logger.error(error_msg)
-                     screenshot_path = Path("~/.Djin/logs/add_entry_button_missing.png").expanduser()
-                     page.screenshot(path=str(screenshot_path))
-                     logger.error(f"Screenshot saved to: {screenshot_path}")
-                     raise MoneyMonkError(error_msg)
-
+                    error_msg = "Cannot find 'Add time entry' button or time input field. Cannot proceed."
+                    logger.error(error_msg)
+                    screenshot_path = Path("~/.Djin/logs/add_entry_button_missing.png").expanduser()
+                    page.screenshot(path=str(screenshot_path))
+                    logger.error(f"Screenshot saved to: {screenshot_path}")
+                    raise MoneyMonkError(error_msg)
 
             # Wait for modal form elements
             try:
@@ -276,7 +276,7 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             logger.debug("Selecting project (second option)...")
             page.click(project_dropdown_trigger)
             page.wait_for_selector(project_option_selector_base, state="visible", timeout=5000)
-            page.wait_for_timeout(500) # Wait for options to render fully
+            page.wait_for_timeout(500)  # Wait for options to render fully
             all_options = page.query_selector_all(project_option_selector_base)
             if len(all_options) >= 2:
                 logger.debug(f"Found {len(all_options)} options, clicking option #2.")
@@ -290,7 +290,7 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
                     logger.error("No project options found in dropdown!")
                     # No need to raise here, let submission fail if project is mandatory
 
-            page.wait_for_timeout(500) # Wait for selection to register
+            page.wait_for_timeout(500)  # Wait for selection to register
 
             # Take screenshot before submission
             screenshot_path = Path("~/.Djin/logs/before_submit.png").expanduser()
@@ -300,7 +300,7 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             # Submit the form
             logger.debug(f"Clicking submit button: {submit_button_selector}")
             page.click(submit_button_selector)
-            page.wait_for_timeout(3000) # Wait for submission processing
+            page.wait_for_timeout(3000)  # Wait for submission processing
 
             # --- 4. Verify Submission ---
             logger.info("Verifying submission...")
@@ -319,7 +319,9 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
                     page.wait_for_selector(entry_selector, state="visible", timeout=5000)
                     logger.info(f"Verified: Found the newly added entry with description: '{description}'")
                 except PlaywrightTimeoutError:
-                    logger.warning(f"Could not verify entry '{description}' in list after submission (may take time to appear).")
+                    logger.warning(
+                        f"Could not verify entry '{description}' in list after submission (may take time to appear)."
+                    )
                 except Exception as e:
                     logger.warning(f"Error verifying entry in list: {e}")
                 return True
@@ -337,13 +339,13 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
 
     except (ConfigurationError, MoneyMonkError) as e:
         logger.error(f"MoneyMonk hour registration failed: {e}")
-        raise # Re-raise specific errors
+        raise  # Re-raise specific errors
     except PlaywrightTimeoutError as e:
         logger.error(f"Playwright operation timed out during registration: {e}")
-        raise MoneyMonkError(f"Operation timed out during registration: {e}") # Wrap as MoneyMonkError
+        raise MoneyMonkError(f"Operation timed out during registration: {e}")  # Wrap as MoneyMonkError
     except PlaywrightError as e:
         logger.error(f"A Playwright error occurred during registration: {e}")
-        raise MoneyMonkError(f"A browser automation error occurred during registration: {e}") # Wrap as MoneyMonkError
+        raise MoneyMonkError(f"A browser automation error occurred during registration: {e}")  # Wrap as MoneyMonkError
     except Exception as e:
         logger.error(f"An unexpected error occurred during hour registration: {e}", exc_info=True)
-        raise MoneyMonkError(f"An unexpected error during hour registration: {str(e)}") # Wrap as MoneyMonkError
+        raise MoneyMonkError(f"An unexpected error during hour registration: {str(e)}")  # Wrap as MoneyMonkError
