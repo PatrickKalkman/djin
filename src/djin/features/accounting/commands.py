@@ -102,7 +102,7 @@ def register_accounting_commands():
         ),
         "accounting login": (
             login_command,
-            "Test the login process for MoneyMonk using Playwright. Add --no-headless to watch.",
+            "Test the login process for MoneyMonk using Playwright. Add --headless to run without browser UI. Uses LOGIN_URL from .env if available.",
         ),
         # Add other accounting commands here
     }

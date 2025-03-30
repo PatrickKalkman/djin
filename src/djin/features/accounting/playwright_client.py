@@ -23,9 +23,13 @@ DEFAULT_TIMEOUT = 30 * 1000 # 30 seconds
 
 def _get_moneymonk_credentials():
     """Loads MoneyMonk credentials from config and keyring."""
+    import os
+    
     config = load_config()
     mm_config = config.get("moneymonk", {})
-    url = mm_config.get("url")
+    
+    # Use LOGIN_URL from environment if available, otherwise use URL from config
+    url = os.environ.get("LOGIN_URL") or mm_config.get("url")
     username = mm_config.get("username")
 
     if not url or not username:
@@ -235,8 +239,12 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
 
 
             # 2. Navigate to the hour registration page
-            #    Replace with the actual URL or navigation steps
-            registration_url = f"{creds['url']}/path/to/hour/registration" # <-- Replace this URL
+            #    Use BASE_TIME_ENTRY_URL from environment if available
+            import os
+            registration_url = os.environ.get("BASE_TIME_ENTRY_URL")
+            if not registration_url:
+                # Fall back to constructing URL from base URL if environment variable not set
+                registration_url = f"{creds['url']}/path/to/hour/registration" # <-- Replace this URL
             logger.debug(f"Navigating to hour registration page: {registration_url}")
             page.goto(registration_url)
             page.wait_for_load_state("networkidle")
