@@ -337,11 +337,11 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             # Use the provided date or today's date if not specified
             entry_date = date if date else datetime.now().strftime("%Y-%m-%d")
 
-            # Get the base URL from environment or construct it
+            # Get the base URL from environment
             base_time_entry_url = os.environ.get("BASE_TIME_ENTRY_URL")
             if not base_time_entry_url:
-                # Construct the URL with the correct format for MoneyMonk
-                base_time_entry_url = "https://app.moneymonk.nl/v2/administrations/9601/time/entry"
+                # If not set in environment, raise an error
+                raise ConfigurationError("BASE_TIME_ENTRY_URL not set in environment. Please add it to your .env file.")
 
             # Add the date parameter
             registration_url = f"{base_time_entry_url}?date={entry_date}"

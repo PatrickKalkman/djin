@@ -104,11 +104,11 @@ def register_accounting_commands():
     commands_to_register = {
         "accounting register-hours": (
             register_hours_command,
-            "Register hours on MoneyMonk (Usage: /accounting register-hours YYYY-MM-DD hours description)",
+            "Register hours on MoneyMonk (Usage: /accounting register-hours YYYY-MM-DD hours description). Uses BASE_TIME_ENTRY_URL from .env.",
         ),
         "accounting login": (
             login_command,
-            "Test the login process for MoneyMonk using Playwright. Add --headless to run without browser UI. Uses LOGIN_URL from .env if available.",
+            "Test the login process for MoneyMonk using Playwright. Add --headless to run without browser UI. Uses LOGIN_URL from .env.",
         ),
         # Add other accounting commands here
     }
