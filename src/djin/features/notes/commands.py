@@ -9,6 +9,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+# Import register_command from the central location
 from djin.cli.commands import register_command
 from djin.features.notes.db.schema import get_connection, init_database
 
@@ -27,8 +28,11 @@ def add_note_command(args: List[str]) -> bool:
         return False
 
     note_text = " ".join(args)
-    
+
     try:
+        # Ensure DB is initialized before first use in a command
+        # Consider moving init_database() to app startup if preferred
+        init_database()
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute(
@@ -49,6 +53,8 @@ def add_note_command(args: List[str]) -> bool:
 def list_notes_command(args: List[str]) -> bool:
     """List all notes."""
     try:
+        # Ensure DB is initialized before first use in a command
+        init_database()
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute(
@@ -96,6 +102,8 @@ def view_note_command(args: List[str]) -> bool:
         return False
         
     try:
+        # Ensure DB is initialized before first use in a command
+        init_database()
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute(
@@ -124,21 +132,20 @@ def view_note_command(args: List[str]) -> bool:
 def debug_notes_db_command(args: List[str]) -> bool:
     """Debug the notes database."""
     try:
+        # Ensure DB is initialized before first use in a command
+        init_database()
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Check if the notes table exists
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='notes'")
         tables = cursor.fetchall()
-        
         if not tables:
             console.print("[red]Notes table does not exist![/red]")
-            console.print("Attempting to initialize database...")
-            init_database()
-            console.print("[green]Database initialized[/green]")
+            # init_database() was already called, maybe log differently
+            console.print("[yellow]Database should have been initialized. Check for errors.[/yellow]")
         else:
             console.print("[green]Notes table exists[/green]")
-            
         # Get table schema
         cursor.execute("PRAGMA table_info(notes)")
         schema = cursor.fetchall()
@@ -179,6 +186,8 @@ def delete_note_command(args: List[str]) -> bool:
         return False
         
     try:
+        # Ensure DB is initialized before first use in a command
+        init_database()
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT id FROM notes WHERE id = ?", (note_id,))
@@ -217,22 +226,22 @@ def note_command(args: List[str]) -> bool:
         console.print("Available subcommands: add, list, view, delete")
         return False
 
+# --- Registration Function ---
 
-# Initialize the database
-try:
-    init_database()
-    logger.info("Notes database initialized")
-except Exception as e:
-    logger.error(f"Failed to initialize notes database: {str(e)}")
-    console.print(f"[red]Failed to initialize notes database: {str(e)}[/red]")
+def register_note_commands():
+    """Registers all commands related to the notes feature."""
+    commands_to_register = {
+        "note": (note_command, "Manage notes (add, list, view, delete)"),
+        "note add": (add_note_command, "Add a new note"),
+        "note list": (list_notes_command, "List all notes"),
+        "note view": (view_note_command, "View a specific note by ID"),
+        "note delete": (delete_note_command, "Delete a note by ID"),
+        "note debug": (debug_notes_db_command, "Debug the notes database"),
+    }
+    for name, (func, help_text) in commands_to_register.items():
+        register_command(name, func, help_text)
+    logger.info(f"Notes commands registered: {list(commands_to_register.keys())}")
 
-# Register commands
-register_command("note", note_command, "Manage notes (add, list, view, delete)")
-register_command("note add", add_note_command, "Add a new note")
-register_command("note list", list_notes_command, "List all notes")
-register_command("note view", view_note_command, "View a specific note by ID")
-register_command("note delete", delete_note_command, "Delete a note by ID")
-register_command("note debug", debug_notes_db_command, "Debug the notes database")
-
-# Log registration status
-logger.info(f"Notes commands registered: {['note', 'note add', 'note list', 'note view', 'note delete', 'note debug']}")
+# --- Remove Module-Level Side Effects ---
+# Remove the old module-level registration calls
+# Remove the module-level init_database() call

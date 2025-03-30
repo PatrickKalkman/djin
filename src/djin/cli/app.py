@@ -2,6 +2,7 @@
 Main CLI application loop for Djin.
 """
 
+import logging # Added logging import
 import pathlib
 import sys
 
@@ -13,9 +14,22 @@ from rich.panel import Panel
 from rich.text import Text
 
 from djin.__version__ import __version__ as VERSION
+# Import the command router and core command registration (if you create one)
+from djin.cli.commands import route_command, register_command, help_command, exit_command, debug_commands
+# Import the registration functions from feature modules
+from djin.features.notes.commands import register_note_commands
+# Import other feature command registration functions here as you create them
+# from djin.features.tasks.commands import register_task_commands
+# from djin.features.textsynth.commands import register_textsynth_commands
+# from djin.features.orchestrator.commands import register_orchestrator_commands
+
+# Import database initialization if you want to do it once at startup
+from djin.features.notes.db.schema import init_database as init_notes_db
+# Import other initializers if needed
 
 # Create console for rich output
 console = Console()
+logger = logging.getLogger("djin.cli.app") # Added logger
 
 # Style for the prompt
 style = Style.from_dict(
@@ -47,12 +61,13 @@ def process_command(command):
         return
 
     cmd_name = cmd_parts[0].lower()
-    args = cmd_parts[1:]
+    # If command has subcommands, join them for lookup, e.g., "note add"
+    full_cmd_name = " ".join(cmd_parts[:2]) if len(cmd_parts) > 1 else cmd_name
+    args = cmd_parts[1:] # Pass all parts after the first as args initially
 
     # Use the command router from commands.py
-    from djin.cli.commands import route_command
-
-    result = route_command(cmd_name, args)
+    # The router will handle finding the correct command (simple or compound)
+    result = route_command(cmd_name, args) # Keep routing simple for now
 
     # Handle exit command
     if result == "EXIT":
@@ -61,9 +76,10 @@ def process_command(command):
 
 
 def add_note(text):
-    """Add a note for the current task."""
-    # This is a placeholder - will be implemented properly later
-    console.print(f"[green]Note added: {text}[/green]")
+    """Add a note using the note command."""
+    # Use the actual command processing logic
+    from djin.features.notes.commands import add_note_command
+    add_note_command(text.split())
 
 
 def show_help():
@@ -77,7 +93,42 @@ def show_help():
 def show_status():
     """Show current status (current task, timer, etc.)."""
     # This is a placeholder - will be implemented properly later
-    console.print("[dim]No active task. Timer stopped.[/dim]")
+    # TODO: Integrate with state management
+    console.print("[dim]Status: No active task. Timer stopped.[/dim]")
+
+
+def register_all_commands():
+    """Registers all core and feature commands."""
+    logger.info("Registering all commands...")
+    # Register core commands (example)
+    register_command("help", help_command, "Show this help message")
+    register_command("?", help_command, "Alias for help")
+    register_command("exit", exit_command, "Exit Djin")
+    register_command("quit", exit_command, "Alias for exit")
+    register_command("debug", debug_commands, "Show debug information")
+
+    # Register feature commands
+    register_note_commands()
+    # register_task_commands() # Uncomment when implemented
+    # register_textsynth_commands() # Uncomment when implemented
+    # register_orchestrator_commands() # Uncomment when implemented
+
+    logger.info("All commands registered.")
+
+
+def initialize_features():
+    """Initialize features like databases."""
+    logger.info("Initializing features...")
+    try:
+        init_notes_db()
+        logger.info("Notes database initialized.")
+    except Exception as e:
+        logger.error(f"Failed to initialize notes database: {str(e)}", exc_info=True)
+        console.print(f"[bold red]Error initializing notes database: {e}[/bold red]")
+        # Decide if you want to exit or continue without notes DB
+        # sys.exit(1)
+    # Call other initializers here
+    logger.info("Features initialized.")
 
 
 def main_loop():
@@ -89,8 +140,15 @@ def main_loop():
     # Create prompt session with history
     session = PromptSession(history=FileHistory(str(history_dir / "history")), style=style)
 
-    # Import all feature modules to ensure commands are registered
-    # This is done in main.py's initialize_features function
+    # Create prompt session with history
+    session = PromptSession(history=FileHistory(str(history_dir / "history")), style=style)
+
+    # --- Initialization ---
+    # Register all commands *before* the loop starts
+    register_all_commands()
+    # Initialize features (like DBs) *before* the loop starts
+    initialize_features()
+    # --- End Initialization ---
 
     # Display welcome message
     display_welcome()
@@ -114,11 +172,12 @@ def main_loop():
                 process_command(text)
             else:
                 # Handle plain text (add as note)
+                console.print("[cyan]Adding note:[/cyan]", text) # Give feedback
                 add_note(text)
 
         except KeyboardInterrupt:
             # Handle Ctrl+C
-            console.print("\n[yellow]Operation cancelled. Press Ctrl+D to exit.[/yellow]")
+            console.print("\n[yellow]Operation cancelled. Press Ctrl+D or type /exit to quit.[/yellow]")
             continue
         except EOFError:
             # Handle Ctrl+D to exit
@@ -126,8 +185,12 @@ def main_loop():
             break
         except Exception as e:
             # Handle unexpected errors
-            console.print(f"\n[red]Error: {str(e)}[/red]")
+            logger.error("An unexpected error occurred in the main loop.", exc_info=True)
+            console.print(f"\n[bold red]An unexpected error occurred: {str(e)}[/bold red]")
+            console.print("[yellow]Check the log file for details.[/yellow]")
 
 
 if __name__ == "__main__":
+    # Basic logging setup if run directly (usually configured elsewhere)
+    logging.basicConfig(level=logging.INFO)
     main_loop()
