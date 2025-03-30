@@ -155,32 +155,81 @@ def login_to_moneymonk(headless=True) -> bool:
             # Wait for potential navigation or TOTP page load
             page.wait_for_load_state("networkidle", timeout=10000)  # Wait max 10s for network idle
 
-            # Check if TOTP is needed
-            # Use page.is_visible() for a non-blocking check
-            if page.is_visible("#code"):
-                logger.info("TOTP code entry required.")
-                page.fill("#code", totp_code)
-                logger.debug("Clicking submit button after TOTP...")
-                page.click("button[data-testid='button']")
-                page.wait_for_load_state("networkidle", timeout=15000)  # Wait longer after TOTP
-            else:
-                logger.info("TOTP code entry not required or element not found.")
-
-            # Basic check for successful login
-            # Replace '#dashboard-element' with a reliable selector from the MoneyMonk dashboard
-            # Example: Check if the URL contains '/dashboard' or a specific element exists
-            dashboard_selector = "nav a[href*='/dashboard']"  # Example selector
+            # Check if TOTP is needed - wait for the code field to appear
             try:
-                page.wait_for_selector(dashboard_selector, state="visible", timeout=10000)
-                logger.info("Login successful (dashboard element found).")
-                return True
-            except PlaywrightTimeoutError:
-                logger.error("Login potentially failed (dashboard element not found after timeout).")
-                # Capture screenshot on failure for debugging
-                screenshot_path = Path("~/.Djin/logs/login_failure.png").expanduser()
+                logger.info("Waiting for TOTP code field to appear...")
+                page.wait_for_selector("#code", state="visible", timeout=10000)
+                logger.info("TOTP code entry required.")
+                
+                # Take a screenshot before entering TOTP (for debugging)
+                screenshot_path = Path("~/.Djin/logs/before_totp.png").expanduser()
                 screenshot_path.parent.mkdir(parents=True, exist_ok=True)
                 page.screenshot(path=str(screenshot_path))
-                logger.error(f"Screenshot saved to {screenshot_path}")
+                logger.debug(f"Screenshot before TOTP saved to {screenshot_path}")
+                
+                # Enter the TOTP code
+                page.fill("#code", totp_code)
+                logger.debug(f"Entered TOTP code: {totp_code}")
+                
+                # Make sure to wait for the button to be clickable
+                submit_button = page.locator("button[data-testid='button']")
+                submit_button.wait_for(state="visible")
+                
+                # Click the submit button
+                logger.debug("Clicking submit button after TOTP...")
+                submit_button.click()
+                
+                # Wait for navigation after TOTP submission
+                page.wait_for_load_state("networkidle", timeout=15000)  # Wait longer after TOTP
+            except PlaywrightTimeoutError:
+                logger.info("TOTP code entry not required (timeout waiting for code field).")
+
+            # Basic check for successful login
+            # Take a screenshot after TOTP submission (for debugging)
+            screenshot_path = Path("~/.Djin/logs/after_totp.png").expanduser()
+            screenshot_path.parent.mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(screenshot_path))
+            logger.debug(f"Screenshot after TOTP saved to {screenshot_path}")
+            
+            # Check for dashboard or successful login indicators
+            # Try multiple possible selectors that might indicate successful login
+            dashboard_selectors = [
+                "nav a[href*='/dashboard']",  # Example selector
+                ".dashboard-container",        # Another example
+                ".user-profile",               # Another example
+                ".logged-in-indicator"         # Another example
+            ]
+            
+            # Log the current URL for debugging
+            logger.debug(f"Current URL after login attempt: {page.url}")
+            
+            # Check if URL contains dashboard or other success indicators
+            if "/dashboard" in page.url or "/home" in page.url:
+                logger.info("Login successful (dashboard URL detected).")
+                return True
+                
+            # Try each selector
+            for selector in dashboard_selectors:
+                try:
+                    if page.wait_for_selector(selector, state="visible", timeout=5000):
+                        logger.info(f"Login successful (found dashboard element: {selector}).")
+                        return True
+                except PlaywrightTimeoutError:
+                    logger.debug(f"Selector not found: {selector}")
+                    continue
+            
+            # If we get here, no dashboard elements were found
+            logger.error("Login potentially failed (dashboard elements not found after timeout).")
+            # Capture final screenshot on failure for debugging
+            screenshot_path = Path("~/.Djin/logs/login_failure.png").expanduser()
+            screenshot_path.parent.mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(screenshot_path))
+            logger.error(f"Screenshot saved to {screenshot_path}")
+            
+            # Check if we're still on the TOTP screen
+            if page.is_visible("#code"):
+                raise MoneyMonkError("Login failed: Still on TOTP screen. TOTP code may be incorrect or not accepted.")
+            else:
                 raise MoneyMonkError("Login failed: Could not verify dashboard access.")
 
     except (ConfigurationError, MoneyMonkError) as e:
