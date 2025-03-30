@@ -20,12 +20,12 @@ from djin.cli.commands import exit_command, help_command, register_command, rout
 
 # Import the registration functions from feature modules
 from djin.features.notes.commands import add_note_command, register_note_commands
-from djin.features.textsynth.commands import register_textsynth_commands
-from djin.features.orchestrator.commands import register_orchestrator_commands
 
 # Import database initialization if you want to do it once at startup
 from djin.features.notes.db.schema import init_database as init_notes_db
+from djin.features.orchestrator.commands import register_orchestrator_commands
 from djin.features.tasks.commands import register_task_commands
+from djin.features.textsynth.commands import register_textsynth_commands
 
 # Import other feature command registration functions here as you create them
 
@@ -71,7 +71,7 @@ def process_command(command):
 
     # Use the command router from commands.py
     # The router will handle finding the correct command (simple or compound)
-    result = route_command(cmd_name, args)  # Keep routing simple for now
+    result = route_command(full_cmd_name, args)  # Keep routing simple for now
 
     # Handle exit command
     if result == "EXIT":

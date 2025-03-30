@@ -2,7 +2,8 @@
 Command handlers for Jira task management.
 """
 
-import logging # Add logging import
+import logging  # Add logging import
+
 from rich.console import Console
 
 from djin.cli.commands import register_command
@@ -190,7 +191,7 @@ def set_task_status_command(args):
 
 # --- Registration Function ---
 
-logger = logging.getLogger("djin.tasks.commands") # Ensure logger is defined for registration
+logger = logging.getLogger("djin.tasks.commands")  # Ensure logger is defined for registration
 
 
 def register_task_commands():
