@@ -41,6 +41,9 @@ target-version = "py312"
 # Line length matches black's default
 line-length = 120
 
+[tool.ruff.format]
+preview = true
+
 [dependency-groups]
 dev = [
     "hatch>=1.14.0",

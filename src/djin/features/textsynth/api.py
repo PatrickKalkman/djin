@@ -4,9 +4,7 @@ Public API for the report and text synthesis agent.
 This module provides a public interface for other agents to call the report and text synthesis agent.
 """
 
-from typing import List
-
-from typing import List, Dict, Any # Added Dict, Any
+from typing import Any, Dict, List  # Added Dict, Any
 
 from djin.features.textsynth.agent import TextSynthAgent
 
@@ -31,4 +29,4 @@ class TextSynthAPI:
         # Extract keys and titles for the agent
         keys = [task.get("key") for task in tasks_data]
         titles = [task.get("summary") for task in tasks_data]
-        return self._agent.summarize_titles_with_keys(keys, titles) # Renamed agent method
+        return self._agent.summarize_titles_with_keys(keys, titles)  # Renamed agent method
