@@ -219,20 +219,15 @@ def create_jira_link(issue_key: str) -> Text:
     Returns:
         Text: A Rich Text object with a hyperlink that's clickable in compatible terminals
     """
-    # Get Jira URL from config
     config = load_config()
     jira_url = config.get("jira", {}).get("url", "")
 
-    # Create browse URL
     if jira_url:
         if not jira_url.endswith("/"):
             jira_url += "/"
         browse_url = f"{jira_url}browse/{issue_key}"
     else:
-        # Fallback to a generic format if URL not configured
         browse_url = f"https://jira.atlassian.net/browse/{issue_key}"
-
-    # Create a Rich Text object with a hyperlink
     text = Text(issue_key)
     text.stylize(f"link {browse_url}")
     return text
@@ -315,7 +310,6 @@ def transition_issue(issue_key: str, transition_name: str) -> bool:
     try:
         issue = jira.issue(issue_key)
 
-        # Find the transition ID
         transitions = jira.transitions(issue)
         transition_id = None
 
@@ -332,8 +326,6 @@ def transition_issue(issue_key: str, transition_name: str) -> bool:
                     f"Available transitions: {available_transitions}"
                 )
             )
-
-        # Perform the transition
         jira.transition_issue(issue, transition_id)
         return True
     except Exception as e:
@@ -390,7 +382,6 @@ def create_subtask(parent_key: str, summary: str, description: str) -> str:
     jira = get_jira_client()
 
     try:
-        # Get parent issue to determine project
         parent_issue = jira.issue(parent_key)
 
         subtask_dict = {
@@ -424,9 +415,8 @@ def assign_issue(issue_key: str, assignee: Optional[str] = None) -> bool:
     jira = get_jira_client()
 
     try:
-        # If no assignee specified, assign to self
         if assignee is None:
-            jira.assign_issue(issue_key, None)  # None means self-assignment in JIRA API
+            jira.assign_issue(issue_key, None)
         else:
             jira.assign_issue(issue_key, assignee)
         return True
