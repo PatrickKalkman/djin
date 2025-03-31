@@ -495,13 +495,19 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
         logger.info(f"Found {len(worklog_issues)} issues with worklog entries")
         all_issues.extend([issue.key for issue in worklog_issues])
 
-        jql = f"assignee = currentUser() AND updated >= '{target_date} 00:00' AND updated <= '{target_date} 23:59' ORDER BY updated DESC"
+        jql = (
+            f"assignee = currentUser() AND updated >= '{target_date} 00:00' "
+            f"AND updated <= '{target_date} 23:59' ORDER BY updated DESC"
+        )
         logger.info(f"Executing JQL: {jql}")
         updated_issues = jira.search_issues(jql)
         logger.info(f"Found {len(updated_issues)} issues updated on this date")
         all_issues.extend([issue.key for issue in updated_issues if issue.key not in all_issues])
 
-        jql = f"assignee = currentUser() AND status CHANGED DURING ('{target_date} 00:00', '{target_date} 23:59') ORDER BY updated DESC"
+        jql = (
+            f"assignee = currentUser() AND status CHANGED DURING ('{target_date} 00:00', "
+            f"'{target_date} 23:59') ORDER BY updated DESC"
+        )
         logger.info(f"Executing JQL: {jql}")
         status_changed_issues = jira.search_issues(jql)
         logger.info(f"Found {len(status_changed_issues)} issues with status changes")
@@ -513,13 +519,19 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
         logger.info(f"Found {len(in_progress_issues)} issues in progress")
         all_issues.extend([issue.key for issue in in_progress_issues if issue.key not in all_issues])
 
-        jql = f"assignee = currentUser() AND assignee CHANGED DURING ('{target_date} 00:00', '{target_date} 23:59') ORDER BY updated DESC"
+        jql = (
+            f"assignee = currentUser() AND assignee CHANGED DURING ('{target_date} 00:00', "
+            f"'{target_date} 23:59') ORDER BY updated DESC"
+        )
         logger.info(f"Executing JQL: {jql}")
         assigned_issues = jira.search_issues(jql)
         logger.info(f"Found {len(assigned_issues)} issues assigned on this date")
         all_issues.extend([issue.key for issue in assigned_issues if issue.key not in all_issues])
 
-        jql = f'issueFunction in commented(\'by currentUser() after "{target_date} 00:00" before "{target_date} 23:59"\') ORDER BY updated DESC'
+        jql = (
+            f'issueFunction in commented(\'by currentUser() after "{target_date} 00:00" '
+            f'before "{target_date} 23:59"\') ORDER BY updated DESC'
+        )
         try:
             logger.info(f"Executing JQL for comments: {jql}")
             commented_issues = jira.search_issues(jql, maxResults=50)
@@ -527,7 +539,8 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
             all_issues.extend([issue.key for issue in commented_issues if issue.key not in all_issues])
         except Exception as e:
             logger.warning(
-                f"Could not execute JQL for commented issues: {e}. This might be due to missing JQL functions (like issueFunction). Skipping this check."
+                f"Could not execute JQL for commented issues: {e}. "
+                f"This might be due to missing JQL functions (like issueFunction). Skipping this check."
             )
 
         if all_issues:
