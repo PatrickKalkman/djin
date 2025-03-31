@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from jira import JIRA
-from loguru import logger  # Import Loguru logger
+from loguru import logger
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
@@ -16,12 +16,8 @@ from rich.text import Text
 from djin.common.config import load_config
 from djin.common.errors import JiraError
 
-# Set up rich console
 console = Console()
 
-# Loguru logger is imported directly
-
-# Global Jira client instance
 jira_client: Optional[JIRA] = None
 
 
@@ -69,7 +65,6 @@ def get_my_issues(status_filter: str = None) -> List[Any]:
     jira = get_jira_client()
 
     try:
-        # Base JQL for assigned issues
         if status_filter:
             jql = f"assignee = currentUser() AND {status_filter} ORDER BY priority DESC, updated DESC"
         else:
@@ -80,10 +75,8 @@ def get_my_issues(status_filter: str = None) -> List[Any]:
 
         issues = jira.search_issues(jql)
 
-        # Fetch worklog information for each issue
         for issue in issues:
             try:
-                # Add worklog data to each issue
                 issue.worklog_seconds = get_issue_worklog_time(issue.key)
             except Exception as e:
                 logger.error(f"Error fetching worklog for {issue.key}: {str(e)}")
@@ -107,7 +100,6 @@ def get_my_completed_issues(days: int = 7) -> List[Any]:
     jira = get_jira_client()
 
     try:
-        # Get issues that were completed (Done or Resolved) in the specified days
         one_week_ago = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
         jql = (
             "assignee = currentUser() AND (status = Done OR status = Resolved) "
@@ -115,10 +107,8 @@ def get_my_completed_issues(days: int = 7) -> List[Any]:
         )
         issues = jira.search_issues(jql)
 
-        # Fetch worklog information for each issue
         for issue in issues:
             try:
-                # Add worklog data to each issue
                 issue.worklog_seconds = get_issue_worklog_time(issue.key)
             except Exception as e:
                 logger.error(f"Error fetching worklog for {issue.key}: {str(e)}")
@@ -192,7 +182,6 @@ def get_issue_details(issue_key: str) -> Dict[str, Any]:
     try:
         issue = jira.issue(issue_key)
 
-        # Build a dictionary with issue details
         details = {
             "key": issue.key,
             "summary": issue.fields.summary,
@@ -212,7 +201,6 @@ def get_issue_details(issue_key: str) -> Dict[str, Any]:
             "worklog_formatted": format_time_spent(get_issue_worklog_time(issue_key)),
         }
 
-        # Add due date if available
         if hasattr(issue.fields, "duedate") and issue.fields.duedate:
             details["due_date"] = issue.fields.duedate
 
@@ -262,22 +250,17 @@ def display_issues(issues: List[Any], title: str = "My Issues") -> None:
         console.print(f"[yellow]No issues found for: {title}[/yellow]")
         return
 
-    # Create table
     table = Table(title=f"{title} ({len(issues)} total)")
 
-    # Add columns
     table.add_column("Key", style="cyan", no_wrap=True)
     table.add_column("Summary")
     table.add_column("Status", style="green", no_wrap=True)
     table.add_column("Priority", no_wrap=True)
     table.add_column("Time Spent", style="yellow", no_wrap=True)
 
-    # Add rows
     for issue in issues:
-        # Format time spent
         time_spent = format_time_spent(getattr(issue, "worklog_seconds", 0))
 
-        # Add row with clickable issue key
         table.add_row(
             create_jira_link(issue.key),
             issue.fields.summary,
@@ -286,7 +269,6 @@ def display_issues(issues: List[Any], title: str = "My Issues") -> None:
             time_spent,
         )
 
-    # Print table
     console.print(table)
 
 
@@ -491,88 +473,64 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
     jira = get_jira_client()
 
     try:
-        # If no date provided, use today
         if not date_str:
             target_date = date.today().strftime("%Y-%m-%d")
         else:
-            # Validate date format
             try:
                 datetime.strptime(date_str, "%Y-%m-%d")
                 target_date = date_str
             except ValueError:
                 raise JiraError(f"Invalid date format: {date_str}. Please use YYYY-MM-DD format.")
 
-        # Parse the target date to create date range
         parsed_date = datetime.strptime(target_date, "%Y-%m-%d").date()
         next_day = (parsed_date + timedelta(days=1)).strftime("%Y-%m-%d")
 
-        # Log the search parameters
         logger.info(f"Searching for issues worked on between {target_date} and {next_day}")
 
-        # Try multiple approaches to find worked-on issues
         all_issues = []
 
-        # 1. First try with worklogDate (standard approach)
         jql = f"worklogDate = {target_date} AND worklogAuthor = currentUser() ORDER BY updated DESC"
         logger.info(f"Executing JQL: {jql}")
         worklog_issues = jira.search_issues(jql)
         logger.info(f"Found {len(worklog_issues)} issues with worklog entries")
         all_issues.extend([issue.key for issue in worklog_issues])
 
-        # 2. Try with updated date (might have worked on it without logging time)
-        # Use a date range to ensure we catch all updates
         jql = f"assignee = currentUser() AND updated >= '{target_date} 00:00' AND updated <= '{target_date} 23:59' ORDER BY updated DESC"
         logger.info(f"Executing JQL: {jql}")
         updated_issues = jira.search_issues(jql)
         logger.info(f"Found {len(updated_issues)} issues updated on this date")
         all_issues.extend([issue.key for issue in updated_issues if issue.key not in all_issues])
 
-        # 3. Try with status changes (e.g., moved to In Progress)
-        # Look for status changes on the target date
         jql = f"assignee = currentUser() AND status CHANGED DURING ('{target_date} 00:00', '{target_date} 23:59') ORDER BY updated DESC"
         logger.info(f"Executing JQL: {jql}")
         status_changed_issues = jira.search_issues(jql)
         logger.info(f"Found {len(status_changed_issues)} issues with status changes")
         all_issues.extend([issue.key for issue in status_changed_issues if issue.key not in all_issues])
 
-        # 4. Include all In Progress issues as a fallback
         jql = "assignee = currentUser() AND status = 'In Progress' ORDER BY updated DESC"
         logger.info(f"Executing JQL: {jql}")
         in_progress_issues = jira.search_issues(jql)
         logger.info(f"Found {len(in_progress_issues)} issues in progress")
         all_issues.extend([issue.key for issue in in_progress_issues if issue.key not in all_issues])
 
-        # 5. Include issues that were assigned to you on this date
         jql = f"assignee = currentUser() AND assignee CHANGED DURING ('{target_date} 00:00', '{target_date} 23:59') ORDER BY updated DESC"
         logger.info(f"Executing JQL: {jql}")
         assigned_issues = jira.search_issues(jql)
         logger.info(f"Found {len(assigned_issues)} issues assigned on this date")
         all_issues.extend([issue.key for issue in assigned_issues if issue.key not in all_issues])
 
-        # 6. Try with comments added by the user on that day
-        # Note: JQL doesn't directly support comment author and date filtering efficiently.
-        # A more robust solution might involve fetching recent activity streams or iterating issues,
-        # but this JQL is a common approximation, though potentially slow or incomplete on large instances.
-        # It finds issues *updated* during the period where the current user *was* the last commenter.
-        # This isn't perfect but is the best we can do with standard JQL.
         jql = f'issueFunction in commented(\'by currentUser() after "{target_date} 00:00" before "{target_date} 23:59"\') ORDER BY updated DESC'
-        # Alternative JQL if issueFunction is not available or too slow:
-        # jql = f"comment ~ currentUser() AND updated >= '{target_date} 00:00' AND updated <= '{target_date} 23:59' ORDER BY updated DESC"
-        # This alternative is less precise as it matches the username anywhere in comments.
         try:
             logger.info(f"Executing JQL for comments: {jql}")
-            commented_issues = jira.search_issues(jql, maxResults=50)  # Limit results to avoid performance issues
+            commented_issues = jira.search_issues(jql, maxResults=50)
             logger.info(f"Found {len(commented_issues)} issues potentially commented on (using issueFunction)")
             all_issues.extend([issue.key for issue in commented_issues if issue.key not in all_issues])
         except Exception as e:
-            # Log the error but continue, as this JQL might fail depending on Jira setup (e.g., ScriptRunner not installed)
             logger.warning(
                 f"Could not execute JQL for commented issues: {e}. This might be due to missing JQL functions (like issueFunction). Skipping this check."
             )
 
-        # If we have any issues, fetch them all at once with full details
         if all_issues:
-            # Remove duplicates while preserving order
             unique_issues = []
             for key in all_issues:
                 if key not in unique_issues:
@@ -580,7 +538,6 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
 
             logger.info(f"Found {len(unique_issues)} unique issues in total")
 
-            # Fetch all issues at once if there are any
             if unique_issues:
                 jql = f"key in ({','.join(unique_issues)}) AND status != 'To Do' ORDER BY updated DESC"
                 logger.info(f"Fetching full details with JQL: {jql}")
@@ -592,10 +549,8 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
             logger.info("No issues found across all search methods")
             issues = []
 
-        # Fetch worklog information for each issue
         for issue in issues:
             try:
-                # Add worklog data to each issue
                 issue.worklog_seconds = get_issue_worklog_time(issue.key)
             except Exception as e:
                 logger.error(f"Error fetching worklog for {issue.key}: {str(e)}")
