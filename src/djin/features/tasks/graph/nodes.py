@@ -4,7 +4,6 @@ Node definitions for task workflows.
 This module provides node functions for LangGraph workflows.
 """
 
-from djin.features.tasks.display import format_tasks_table
 from djin.features.tasks.jira_client import get_my_completed_issues, get_my_issues
 
 
@@ -21,11 +20,12 @@ def fetch_tasks_node(state):
             raw_tasks = get_my_issues(status_filter=status_filter)
         elif state.request_type == "active":
             # Active tasks include In Progress and Waiting for customer
-            status_filter = "status = 'In Progress' OR status = 'Waiting for customer'"
+            status_filter = "status = 'In Progress'"  # OR status = 'Waiting for customer'"
             raw_tasks = get_my_issues(status_filter=status_filter)
         elif state.request_type == "worked_on":
             # Get tasks worked on for a specific date
             from djin.features.tasks.jira_client import get_worked_on_issues
+
             date_str = getattr(state, "date", None)
             raw_tasks = get_worked_on_issues(date_str)
         elif state.request_type == "completed":
@@ -34,6 +34,7 @@ def fetch_tasks_node(state):
         elif state.request_type == "task_details":
             # For task details, we'll put the result in raw_tasks even though it's a single item
             from djin.features.tasks.jira_client import get_issue_details
+
             issue_key = getattr(state, "issue_key", "")
             if not issue_key:
                 return {"errors": state.errors + ["No issue key provided"]}
@@ -42,17 +43,18 @@ def fetch_tasks_node(state):
         elif state.request_type == "set_status":
             # For set_status, we need to transition the issue
             from djin.features.tasks.jira_client import get_issue_details, transition_issue
+
             issue_key = getattr(state, "issue_key", "")
             status_name = getattr(state, "status_name", "")
-            
+
             if not issue_key:
                 return {"errors": state.errors + ["No issue key provided"]}
             if not status_name:
                 return {"errors": state.errors + ["No status name provided"]}
-                
+
             # First get the current details to show in the result
             task_details = get_issue_details(issue_key)
-            
+
             # Then attempt the transition
             try:
                 transition_issue(issue_key, status_name)
@@ -64,7 +66,7 @@ def fetch_tasks_node(state):
                 # Mark as failed in the task details
                 task_details["transition_success"] = False
                 task_details["transition_error"] = str(e)
-                
+
             raw_tasks = [task_details]  # Wrap in list to maintain consistent structure
         else:
             raw_tasks = get_my_issues()
@@ -80,7 +82,7 @@ def process_tasks_node(state):
     # For simple todo listing, we might not need LLM processing
     # But this node allows for more complex processing in the future
     processed_tasks = []
-    
+
     # Handle task_details and set_status differently since they're already dictionaries
     if (state.request_type == "task_details" or state.request_type == "set_status") and state.raw_tasks:
         # The task details are already processed by get_issue_details
@@ -88,19 +90,17 @@ def process_tasks_node(state):
     else:
         # Process regular Jira issue objects
         for issue in state.raw_tasks:
-            processed_tasks.append(
-                {
-                    "key": issue.key,
-                    "summary": issue.fields.summary,
-                    "status": issue.fields.status.name,
-                    "type": issue.fields.issuetype.name,
-                    "priority": getattr(issue.fields.priority, "name", "Unknown"),
-                    "assignee": getattr(issue.fields.assignee, "displayName", "Unassigned")
-                    if hasattr(issue.fields, "assignee")
-                    else "Unassigned",
-                    "worklog_seconds": getattr(issue, "worklog_seconds", 0),
-                }
-            )
+            processed_tasks.append({
+                "key": issue.key,
+                "summary": issue.fields.summary,
+                "status": issue.fields.status.name,
+                "type": issue.fields.issuetype.name,
+                "priority": getattr(issue.fields.priority, "name", "Unknown"),
+                "assignee": getattr(issue.fields.assignee, "displayName", "Unassigned")
+                if hasattr(issue.fields, "assignee")
+                else "Unassigned",
+                "worklog_seconds": getattr(issue, "worklog_seconds", 0),
+            })
     return {"processed_tasks": processed_tasks}
 
 
@@ -110,22 +110,31 @@ def format_output_node(state):
     # For task_details and set_status, we still need formatted output for direct display
     if state.request_type == "task_details":
         from rich.console import Console
+
         from djin.features.tasks.display import format_task_details
+
         console = Console(record=True)
         if state.processed_tasks:
             task_details_table = format_task_details(state.processed_tasks[0])
             console.print(task_details_table)
         else:
             console.print(f"[red]No details found for issue {state.issue_key}[/red]")
-        return {"formatted_output": console.export_text(), "processed_tasks": state.processed_tasks, "errors": state.errors}
+        return {
+            "formatted_output": console.export_text(),
+            "processed_tasks": state.processed_tasks,
+            "errors": state.errors,
+        }
 
     elif state.request_type == "set_status":
         from rich.console import Console
+
         console = Console(record=True)
         if state.processed_tasks:
             task = state.processed_tasks[0]
             if task.get("transition_success", False):
-                console.print(f"[green]Successfully transitioned {task['key']} from '{task['old_status']}' to '{task['new_status']}'[/green]")
+                console.print(
+                    f"[green]Successfully transitioned {task['key']} from '{task['old_status']}' to '{task['new_status']}'[/green]"
+                )
             else:
                 error_msg = task.get("transition_error", "Unknown error")
                 console.print(f"[red]Error transitioning {task['key']}: {error_msg}[/red]")
@@ -134,9 +143,13 @@ def format_output_node(state):
             console.print(f"[red]Could not retrieve details for issue {state.issue_key} to attempt transition.[/red]")
             # Add error to state if not already present
             if not any(f"Could not retrieve details for issue {state.issue_key}" in err for err in state.errors):
-                 state.errors.append(f"Could not retrieve details for issue {state.issue_key} before transition.")
+                state.errors.append(f"Could not retrieve details for issue {state.issue_key} before transition.")
 
-        return {"formatted_output": console.export_text(), "processed_tasks": state.processed_tasks, "errors": state.errors}
+        return {
+            "formatted_output": console.export_text(),
+            "processed_tasks": state.processed_tasks,
+            "errors": state.errors,
+        }
 
     # For list-based requests, just pass through the processed tasks and errors.
     # The command layer will handle formatting the table.

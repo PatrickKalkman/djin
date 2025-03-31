@@ -150,7 +150,6 @@ def task_details_command(args: List[str]) -> bool:
         issue_key = args[0]
         result_output = tasks_api.get_task_details(issue_key)
 
-        console.print(result_output)
         return not result_output.strip().startswith("[red]")
 
     except DjinError as e:
