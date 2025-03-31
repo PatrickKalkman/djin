@@ -5,13 +5,11 @@ Task agent for Djin.
 This module provides an agent specialized in task operations.
 """
 
-from typing import Any, Dict, Optional  # Added List, Optional, Dict, Any
+from typing import Any, Dict, Optional
 
-from loguru import logger  # Import Loguru logger
+from loguru import logger
 
 from djin.features.tasks.graph.workflow import create_task_fetching_graph
-
-# Loguru logger is imported directly
 
 
 class TaskAgent:
@@ -23,7 +21,6 @@ class TaskAgent:
         """Helper to invoke workflow and handle potential errors."""
         try:
             final_state = self.task_fetching_workflow.invoke(initial_state)
-            # Ensure keys exist, defaulting to empty lists/strings
             return {
                 "processed_tasks": final_state.get("processed_tasks", []),
                 "formatted_output": final_state.get("formatted_output", ""),
@@ -84,7 +81,6 @@ class TaskAgent:
         result = self._invoke_workflow(initial_state)
         return {"tasks": result["processed_tasks"], "errors": result["errors"]}
 
-    # --- Methods returning formatted strings (Details, Status Change) ---
 
     def process_set_status_request(self, issue_key: str, status_name: str) -> str:
         """Process a request to set task status. Returns formatted success/error string."""
@@ -100,7 +96,6 @@ class TaskAgent:
         result = self._invoke_workflow(initial_state)
         # Return formatted output directly for this type
         if result["errors"] and not result["formatted_output"]:
-            # If workflow failed before formatting, return error message
             return f"[red]Error setting status: {'; '.join(result['errors'])}[/red]"
         return result["formatted_output"]
 
@@ -117,6 +112,5 @@ class TaskAgent:
         result = self._invoke_workflow(initial_state)
         # Return formatted output directly for this type
         if result["errors"] and not result["formatted_output"]:
-            # If workflow failed before formatting, return error message
             return f"[red]Error getting details: {'; '.join(result['errors'])}[/red]"
         return result["formatted_output"]
