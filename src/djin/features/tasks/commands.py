@@ -2,17 +2,15 @@
 Command handlers for Jira task management.
 """
 
-from datetime import datetime  # Added import
-from typing import List  # Added import
+from datetime import datetime
+from typing import List
 
 from loguru import logger
 from rich.console import Console
 
 from djin.cli.commands import register_command
-from djin.common.errors import DjinError, handle_error  # Import DjinError
-
-# Removed TaskAgent import
-from djin.features.tasks.display import format_tasks_table  # Import the formatter
+from djin.common.errors import DjinError, handle_error
+from djin.features.tasks.display import format_tasks_table
 from djin.features.tasks.jira_client import JiraError
 
 console = Console()
@@ -24,30 +22,26 @@ def _handle_task_list_result(result_dict: dict, title: str) -> bool:
     errors = result_dict.get("errors", [])
 
     if errors:
-        # Print errors, especially the specific 'no worked on tasks' message
         for error in errors:
             if "No tasks found that you worked on" in error:
                 console.print(f"[yellow]{error}[/yellow]")
             else:
                 console.print(f"[red]Error: {error}[/red]")
-        # If there were errors but also tasks (e.g., fallback), show tasks.
-        # Otherwise, return False if only errors occurred.
         if not tasks and any("No tasks found that you worked on" not in e for e in errors):
-            return False  # Indicate failure if there were real errors
+            return False
 
     if tasks:
         table = format_tasks_table(tasks, title=title)
         console.print(table)
         return True
-    elif not errors:  # No tasks and no errors
+    elif not errors:
         console.print(f"[yellow]No tasks found for '{title}'.[/yellow]")
-        return True  # No tasks isn't a failure
+        return True
 
-    # If we had the specific 'no worked on tasks' error but no tasks, it's not a failure
     if any("No tasks found that you worked on" in e for e in errors):
         return True
 
-    return False  # Should not be reached ideally
+    return False
 
 
 def todo_command(args: List[str]) -> bool:
@@ -154,11 +148,9 @@ def task_details_command(args: List[str]) -> bool:
             return False
 
         issue_key = args[0]
-        # API method returns the formatted string directly (or error string)
         result_output = tasks_api.get_task_details(issue_key)
 
         console.print(result_output)
-        # Success if the output doesn't start with typical error indicators
         return not result_output.strip().startswith("[red]")
 
     except DjinError as e:
@@ -187,19 +179,15 @@ def set_task_status_command(args: List[str]) -> bool:
         issue_key = args[0]
         status_name = " ".join(args[1:])
 
-        # API method returns the formatted result string (success or error)
         result_output = tasks_api.set_task_status(issue_key, status_name)
 
         console.print(result_output)
-        # Determine success based on the result string
         return "[green]" in result_output
 
     except DjinError as e:
-        # Handle Djin specific errors if the API call itself fails before returning string
         handle_error(e)
         return False
     except Exception as e:
-        # Catch unexpected errors during argument parsing or API call
         logger.error(f"Unexpected error in set-status command: {e}", exc_info=True)
         handle_error(JiraError(f"An unexpected error occurred in the command: {str(e)}"))
         return False
@@ -230,7 +218,3 @@ def register_task_commands():
     for name, (func, help_text) in commands_to_register.items():
         register_command(name, func, help_text)
     logger.info(f"Task commands registered: {list(commands_to_register.keys())}")
-
-
-# --- Remove Module-Level Side Effects ---
-# Registration is handled by the function above.
