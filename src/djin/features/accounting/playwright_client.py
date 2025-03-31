@@ -126,9 +126,6 @@ def playwright_context(headless=False):
                 logger.warning(f"Error stopping Playwright: {e}")
 
 
-# --- Main Functions ---
-
-
 def register_hours_on_website(date: str, description: str, hours: float, headless=True) -> bool:
     """
     Logs into MoneyMonk and registers hours using Playwright.
@@ -228,11 +225,15 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             # Modal selectors
             time_input = "input#time"  # Selector for the time input field
             desc_selector = "input#description"  # Selector for description (updated based on HTML)
-            project_dropdown_trigger = 'div.react-select__control'  # More specific selector for dropdown trigger
+            project_dropdown_trigger = "div.react-select__control"  # More specific selector for dropdown trigger
             project_option_selector_base = 'div[class*="react-select__option"]'  # Base selector for options
             project_name_to_select = "AION Titan Streaming PI"  # The specific project name (for verification)
-            specific_project_option_selector = f"{project_option_selector_base}:has-text('{project_name_to_select}')"  # Fallback selector
-            selected_project_value_selector = 'div[class*="react-select__single-value"]'  # Selector for chosen project display
+            specific_project_option_selector = (
+                f"{project_option_selector_base}:has-text('{project_name_to_select}')"  # Fallback selector
+            )
+            selected_project_value_selector = (
+                'div[class*="react-select__single-value"]'  # Selector for chosen project display
+            )
             submit_button_selector = "button[data-testid='button']:has-text('Toevoegen')"  # Submit button
 
             # Click "Add time entry" button to open the modal
@@ -257,7 +258,7 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
                 page.wait_for_selector(time_input, state="visible", timeout=5000)
                 page.wait_for_selector(desc_selector, state="visible", timeout=5000)
                 page.wait_for_selector(project_dropdown_trigger, state="visible", timeout=5000)
-                
+
                 # Don't wait for submit button yet - it might not be visible until form is filled
                 logger.debug("Basic form elements found. Will check for submit button after filling form.")
             except PlaywrightTimeoutError as e:
@@ -277,16 +278,16 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             logger.debug("Selecting project by choosing the second option in dropdown")
             logger.debug(f"Clicking project dropdown trigger: {project_dropdown_trigger}")
             page.click(project_dropdown_trigger)
-            
+
             # Wait for dropdown options to appear
             logger.debug("Waiting for dropdown options to appear")
-            page.wait_for_selector(project_option_selector_base, state='visible', timeout=5000)
-            
+            page.wait_for_selector(project_option_selector_base, state="visible", timeout=5000)
+
             # Get all options and select the second one (index 1)
             logger.debug("Selecting the second option from dropdown")
             # Wait a moment for all options to be fully loaded
             page.wait_for_timeout(500)
-            
+
             # Select the second option (index 1, since indexing starts at 0)
             all_options = page.query_selector_all(project_option_selector_base)
             if len(all_options) >= 2:
@@ -312,21 +313,24 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             page.wait_for_timeout(500)  # Short wait for value to update
             try:
                 # Wait for the selected value element to contain the project name
-                page.wait_for_selector(f"{selected_project_value_selector}:has-text('{project_name_to_select}')", timeout=3000)
+                page.wait_for_selector(
+                    f"{selected_project_value_selector}:has-text('{project_name_to_select}')", timeout=3000
+                )
                 selected_value = page.text_content(selected_project_value_selector, timeout=1000)
                 logger.info(f"Selected project verified: {selected_value}")
-                # Optional: More robust check if needed
-                # if project_name_to_select not in selected_value:
-                #     logger.warning(f"Selected project text '{selected_value}' does not exactly match '{project_name_to_select}'")
             except PlaywrightTimeoutError:
-                selected_value_now = page.text_content(selected_project_value_selector, timeout=500)  # Get current value if wait failed
-                logger.warning(f"Verification failed: Could not find '{project_name_to_select}' in selected value element '{selected_project_value_selector}'. Current value: '{selected_value_now}'")
+                selected_value_now = page.text_content(
+                    selected_project_value_selector, timeout=500
+                )  # Get current value if wait failed
+                logger.warning(
+                    f"Verification failed: Could not find '{project_name_to_select}' in selected value element '{selected_project_value_selector}'. Current value: '{selected_value_now}'"
+                )
                 # Take a screenshot for debugging
                 screenshot_path = Path("~/.Djin/logs/project_selection_verification_failed.png").expanduser()
                 page.screenshot(path=str(screenshot_path))
                 logger.warning(f"Screenshot saved to: {screenshot_path}")
                 # Continue anyway - the selection might still be valid
-            
+
             # 3. Now fill description (after project selection)
             logger.debug(f"Filling description: {description}")
             page.fill(desc_selector, description)
@@ -341,10 +345,10 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             # Try multiple selectors for the submit button in case the specific text varies
             submit_button_selectors = [
                 "button[data-testid='button']:has-text('Toevoegen')",  # Original Dutch
-                "button[data-testid='button']:has-text('Add')",         # English alternative
-                "button[data-testid='button']",                         # Any button with this test ID as fallback
+                "button[data-testid='button']:has-text('Add')",  # English alternative
+                "button[data-testid='button']",  # Any button with this test ID as fallback
             ]
-            
+
             submit_button_found = False
             for selector in submit_button_selectors:
                 try:
@@ -357,20 +361,20 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
                 except PlaywrightTimeoutError:
                     logger.debug(f"Submit button not found with selector: {selector}")
                     continue
-            
+
             if not submit_button_found:
                 logger.warning("Could not find submit button with any of the predefined selectors")
                 # Take a screenshot to see what's on screen
                 screenshot_path = Path("~/.Djin/logs/submit_button_not_found.png").expanduser()
                 page.screenshot(path=str(screenshot_path))
                 logger.warning(f"Screenshot saved to: {screenshot_path}")
-                
+
                 # Try a last resort approach - look for any button that might be the submit button
                 try:
                     logger.debug("Trying to find any button that might be the submit button")
                     buttons = page.query_selector_all("button")
                     logger.debug(f"Found {len(buttons)} buttons on page")
-                    
+
                     # Click the last button (often the submit button in forms)
                     if buttons:
                         logger.info("Clicking the last button on the page as fallback")
@@ -378,7 +382,7 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
                         submit_button_found = True
                 except Exception as e:
                     logger.error(f"Error in fallback button click approach: {e}")
-            
+
             # Wait after submission attempt
             page.wait_for_timeout(3000)  # Wait for submission processing
 

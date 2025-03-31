@@ -19,14 +19,7 @@ from djin.common.errors import (  # Added MoneyMonkError, ConfigurationError
 )
 from djin.features.accounting.playwright_client import register_hours_on_website
 
-# Import from the new playwright client
-
-# Create console for rich output
 console = Console()
-# Loguru logger is imported directly
-
-
-# --- Command Handlers ---
 
 
 def register_hours_command(args: List[str]) -> bool:
@@ -117,6 +110,3 @@ def register_accounting_commands():
     for name, (func, help_text) in commands_to_register.items():
         register_command(name, func, help_text)
     logger.info(f"Accounting commands registered: {list(commands_to_register.keys())}")
-
-
-# No module-level side effects for registration

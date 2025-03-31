@@ -3,7 +3,8 @@ Public API for the task agent.
 
 This module provides a public interface for other agents to call the task agent.
 """
-from typing import Any, Dict, List, Optional # Added imports
+
+from typing import Any, Dict, Optional  # Added imports
 
 from djin.features.tasks.agent import TaskAgent
 

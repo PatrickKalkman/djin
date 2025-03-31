@@ -14,7 +14,6 @@ from djin.features.tasks.graph.workflow import create_task_fetching_graph
 
 class TaskAgent:
     def __init__(self):
-        # Initialize the LangGraph workflows
         self.task_fetching_workflow = create_task_fetching_graph()
 
     def _invoke_workflow(self, initial_state: Dict) -> Dict[str, Any]:
@@ -40,7 +39,6 @@ class TaskAgent:
             "errors": [],
         }
         result = self._invoke_workflow(initial_state)
-        # Return only tasks and errors for list-based requests
         return {"tasks": result["processed_tasks"], "errors": result["errors"]}
 
     def process_active_request(self) -> Dict[str, Any]:
@@ -81,7 +79,6 @@ class TaskAgent:
         result = self._invoke_workflow(initial_state)
         return {"tasks": result["processed_tasks"], "errors": result["errors"]}
 
-
     def process_set_status_request(self, issue_key: str, status_name: str) -> str:
         """Process a request to set task status. Returns formatted success/error string."""
         initial_state = {
@@ -94,7 +91,6 @@ class TaskAgent:
             "errors": [],
         }
         result = self._invoke_workflow(initial_state)
-        # Return formatted output directly for this type
         if result["errors"] and not result["formatted_output"]:
             return f"[red]Error setting status: {'; '.join(result['errors'])}[/red]"
         return result["formatted_output"]
@@ -110,7 +106,6 @@ class TaskAgent:
             "errors": [],
         }
         result = self._invoke_workflow(initial_state)
-        # Return formatted output directly for this type
         if result["errors"] and not result["formatted_output"]:
             return f"[red]Error getting details: {'; '.join(result['errors'])}[/red]"
         return result["formatted_output"]
