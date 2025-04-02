@@ -101,14 +101,14 @@ def register_time_command(args: List[str]) -> bool:
         # Parse arguments
         date_str = None
         hours = 8.0  # Default to 8 hours
-        
+
         # Process arguments
         if args:
             # First argument could be date or hours
             if len(args) >= 1:
                 first_arg = args[0]
                 # Check if first arg is a date (YYYY-MM-DD format)
-                if len(first_arg) == 10 and first_arg[4] == '-' and first_arg[7] == '-':
+                if len(first_arg) == 10 and first_arg[4] == "-" and first_arg[7] == "-":
                     try:
                         datetime.strptime(first_arg, "%Y-%m-%d")
                         date_str = first_arg
@@ -127,38 +127,44 @@ def register_time_command(args: List[str]) -> bool:
                         hours = float(first_arg)
                     except ValueError:
                         console.print(f"[yellow]Invalid hours value '{first_arg}', using default (8.0)[/yellow]")
-        
+
         display_date = date_str or "today"
         console.print(f"[cyan]Registering {hours} hours for {display_date} with auto-generated summary...[/cyan]")
-        
+
         # Call the orchestrator agent
         result = orchestrator_agent.register_time_with_summary(date_str, hours)
-        
+
         # Display the result
         if result["success"]:
-            console.print(Panel(
-                f"[green]Successfully registered {hours} hours for {display_date}[/green]\n\n"
-                f"[cyan]Summary:[/cyan] {result['summary']}",
-                title="Time Registration Successful",
-                border_style="green"
-            ))
+            console.print(
+                Panel(
+                    f"[green]Successfully registered {hours} hours for {display_date}[/green]\n\n"
+                    f"[cyan]Summary:[/cyan] {result['summary']}",
+                    title="Time Registration Successful",
+                    border_style="green",
+                )
+            )
             return True
         else:
             # Handle the case where no tasks were found
             if "No tasks found" in result.get("summary", ""):
-                console.print(f"[yellow]{result.get('error', 'No tasks found for this date.')}\n"
-                              f"Please verify the date or register hours manually.[/yellow]")
+                console.print(
+                    f"[yellow]{result.get('error', 'No tasks found for this date.')}\n"
+                    f"Please verify the date or register hours manually.[/yellow]"
+                )
             else:
                 # Handle other registration failures
                 error_msg = result.get("error", "Unknown error during registration")
-                console.print(Panel(
-                    f"[red]Registration failed: {error_msg}[/red]\n\n"
-                    f"[cyan]Generated summary:[/cyan] {result.get('summary', 'No summary generated')}",
-                    title="Time Registration Failed",
-                    border_style="red"
-                ))
+                console.print(
+                    Panel(
+                        f"[red]Registration failed: {error_msg}[/red]\n\n"
+                        f"[cyan]Generated summary:[/cyan] {result.get('summary', 'No summary generated')}",
+                        title="Time Registration Failed",
+                        border_style="red",
+                    )
+                )
             return False
-            
+
     except DjinError as e:
         handle_error(e)
         return False

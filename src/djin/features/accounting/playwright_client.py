@@ -292,7 +292,7 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             all_options = page.query_selector_all(project_option_selector_base)
             if len(all_options) >= 2:
                 logger.debug(f"Found {len(all_options)} options, selecting option #2")
-                all_options[2].click()
+                all_options[1].click()
             else:
                 logger.warning(f"Not enough options found in dropdown (found {len(all_options)})")
                 # Fallback: try to click the first option that contains our target text
