@@ -115,9 +115,9 @@ def process_tasks_node(state):
     # But this node allows for more complex processing in the future
     processed_tasks = []
 
-    # Handle task_details and set_status differently since they're already dictionaries
-    if (state.request_type == "task_details" or state.request_type == "set_status") and state.raw_tasks:
-        # The task details are already processed by get_issue_details
+    # Handle task_details, set_status, and create_ticket differently since they're already dictionaries
+    if (state.request_type in ["task_details", "set_status", "create_ticket"]) and state.raw_tasks:
+        # The task details are already processed by get_issue_details or create_issue
         processed_tasks = state.raw_tasks
     else:
         # Process regular Jira issue objects
