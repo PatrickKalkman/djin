@@ -68,6 +68,38 @@ def fetch_tasks_node(state):
                 task_details["transition_error"] = str(e)
 
             raw_tasks = [task_details]  # Wrap in list to maintain consistent structure
+        elif state.request_type == "create_ticket":
+            # For create_ticket, we need to create a new issue
+            from djin.features.tasks.jira_client import create_issue, get_issue_details
+
+            project_key = getattr(state, "project_key", "AION")
+            summary = getattr(state, "summary", "")
+            description = getattr(state, "description", "")
+            issue_type = getattr(state, "issue_type", "Task")
+
+            if not summary:
+                return {"errors": state.errors + ["No summary provided"]}
+
+            # Create the issue
+            try:
+                new_issue_key = create_issue(project_key, summary, description, issue_type)
+                # Get the details of the newly created issue
+                task_details = get_issue_details(new_issue_key)
+                # Mark as successful in the task details
+                task_details["creation_success"] = True
+                task_details["new_issue_key"] = new_issue_key
+            except Exception as e:
+                # Create a minimal task details dict with error info
+                task_details = {
+                    "creation_success": False,
+                    "creation_error": str(e),
+                    "summary": summary,
+                    "description": description,
+                    "project_key": project_key,
+                    "issue_type": issue_type,
+                }
+
+            raw_tasks = [task_details]  # Wrap in list to maintain consistent structure
         else:
             raw_tasks = get_my_issues()
 
@@ -144,6 +176,36 @@ def format_output_node(state):
             # Add error to state if not already present
             if not any(f"Could not retrieve details for issue {state.issue_key}" in err for err in state.errors):
                 state.errors.append(f"Could not retrieve details for issue {state.issue_key} before transition.")
+
+        return {
+            "formatted_output": console.export_text(),
+            "processed_tasks": state.processed_tasks,
+            "errors": state.errors,
+        }
+    
+    elif state.request_type == "create_ticket":
+        from rich.console import Console
+        from djin.features.tasks.display import create_jira_link
+
+        console = Console(record=True)
+        if state.processed_tasks:
+            task = state.processed_tasks[0]
+            if task.get("creation_success", False):
+                issue_key = task.get("new_issue_key", "")
+                issue_link = create_jira_link(issue_key)
+                console.print(f"[green]Successfully created new ticket: {issue_key}[/green]")
+                console.print(f"Summary: {task.get('summary', '')}")
+                console.print(f"Link: {issue_link}")
+            else:
+                error_msg = task.get("creation_error", "Unknown error")
+                console.print(f"[red]Error creating ticket: {error_msg}[/red]")
+                console.print(f"Summary: {task.get('summary', '')}")
+        else:
+            # This case might indicate an error in the workflow
+            console.print("[red]Failed to create ticket due to an unknown error.[/red]")
+            # Add error to state if not already present
+            if not any("Failed to create ticket" in err for err in state.errors):
+                state.errors.append("Failed to create ticket due to an unknown error.")
 
         return {
             "formatted_output": console.export_text(),

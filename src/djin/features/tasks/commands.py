@@ -192,6 +192,38 @@ def set_task_status_command(args: List[str]) -> bool:
         return False
 
 
+def create_ticket_command(args: List[str]) -> bool:
+    """Create a new Jira ticket in the AION MEDIA GROUP project."""
+    try:
+        from djin.features.tasks.api import get_tasks_api
+
+        tasks_api = get_tasks_api()
+
+        if not args or len(args) < 2:
+            console.print(
+                "[red]Error: Please provide a summary and description for the ticket.[/red]"
+            )
+            console.print("[yellow]Usage: /tasks create \"Summary here\" \"Description here\"[/yellow]")
+            return False
+
+        summary = args[0]
+        description = " ".join(args[1:]) if len(args) > 1 else ""
+
+        console.print("[cyan]Creating new ticket in AION MEDIA GROUP project...[/cyan]")
+        result_output = tasks_api.create_ticket(summary, description)
+        
+        console.print(result_output)
+        return "[green]" in result_output
+
+    except DjinError as e:
+        handle_error(e)
+        return False
+    except Exception as e:
+        logger.error(f"Unexpected error in create-ticket command: {e}", exc_info=True)
+        console.print("[bold red]An unexpected error occurred.[/bold red]")
+        return False
+
+
 def register_task_commands():
     """Registers all commands related to the tasks feature."""
     commands_to_register = {
@@ -212,6 +244,10 @@ def register_task_commands():
         "tasks set-status": (
             set_task_status_command,
             "Set the status of a Jira issue (e.g., /tasks set-status PROJ-123 'In Progress')",
+        ),
+        "tasks create": (
+            create_ticket_command,
+            "Create a new Jira ticket in AION MEDIA GROUP (e.g., /tasks create \"Summary\" \"Description\")",
         ),
     }
     for name, (func, help_text) in commands_to_register.items():

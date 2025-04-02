@@ -109,3 +109,21 @@ class TaskAgent:
         if result["errors"] and not result["formatted_output"]:
             return f"[red]Error getting details: {'; '.join(result['errors'])}[/red]"
         return result["formatted_output"]
+        
+    def process_create_ticket_request(self, summary: str, description: str) -> str:
+        """Process a request to create a new ticket. Returns formatted result string."""
+        initial_state = {
+            "request_type": "create_ticket",
+            "project_key": "AION",
+            "summary": summary,
+            "description": description,
+            "issue_type": "Task",
+            "raw_tasks": [],
+            "processed_tasks": [],
+            "formatted_output": "",
+            "errors": [],
+        }
+        result = self._invoke_workflow(initial_state)
+        if result["errors"] and not result["formatted_output"]:
+            return f"[red]Error creating ticket: {'; '.join(result['errors'])}[/red]"
+        return result["formatted_output"]

@@ -94,3 +94,16 @@ class TaskAPI:
             str: A message indicating success or failure.
         """
         return self._agent.process_set_status_request(issue_key, status_name)
+        
+    def create_ticket(self, summary: str, description: str) -> str:
+        """
+        Create a new ticket in the AION MEDIA GROUP project.
+        
+        Args:
+            summary: The ticket summary/title
+            description: The ticket description
+            
+        Returns:
+            str: A message indicating success or failure, including the new ticket key if successful.
+        """
+        return self._agent.process_create_ticket_request(summary, description)
