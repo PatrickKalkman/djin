@@ -22,6 +22,45 @@ from djin.features.accounting.playwright_client import register_hours_on_website
 console = Console()
 
 
+def login_command(args: List[str]) -> bool:
+    """Open browser and login to MoneyMonk."""
+    logger.debug(f"Received login command with args: {args}")
+    
+    # --- Argument Parsing ---
+    headless = "--headless" in args
+    if headless:
+        args = [arg for arg in args if arg != "--headless"]  # Filter out the flag
+    
+    # No other arguments needed for login
+    if args:
+        console.print("[yellow]Note: This command doesn't require any arguments. Extra arguments will be ignored.[/yellow]")
+    
+    # --- Execute Playwright Action ---
+    console.print(f"[cyan]Opening browser and logging into MoneyMonk (headless={headless})...[/cyan]")
+    console.print("[cyan]Press Ctrl+C in the terminal when you're done to close the browser.[/cyan]")
+    
+    try:
+        success = login_to_moneymonk(headless=headless)
+        
+        if success:
+            console.print("[green]Successfully logged into MoneyMonk.[/green]")
+            return True
+        else:
+            console.print("[red]Login failed (function returned False).[/red]")
+            return False
+            
+    except (ConfigurationError, MoneyMonkError, PlaywrightTimeoutError) as e:
+        # Handle specific known errors from the client or Playwright
+        handle_error(e)  # Displays the error nicely
+        return False
+    except Exception as e:
+        # Handle unexpected errors during the command execution
+        logger.error(f"Unexpected error in login_command: {e}", exc_info=True)
+        # Wrap in DjinError for consistent handling
+        handle_error(DjinError(f"An unexpected error occurred during login: {str(e)}"))
+        return False
+
+
 def register_hours_command(args: List[str]) -> bool:
     """Register hours on MoneyMonk via Playwright automation."""
     logger.debug(f"Received register-hours command with args: {args}")
@@ -101,9 +140,13 @@ def register_hours_command(args: List[str]) -> bool:
 def register_accounting_commands():
     """Registers all commands related to the accounting feature."""
     commands_to_register = {
+        "accounting login": (
+            login_command,
+            "Open browser and login to MoneyMonk (Usage: /accounting login [--headless]).",
+        ),
         "accounting register-hours": (
             register_hours_command,
-            "Register hours on MoneyMonk (Usage: /accounting register-hours YYYY-MM-DD hours description).",
+            "Register hours on MoneyMonk (Usage: /accounting register-hours YYYY-MM-DD hours description [--headless]).",
         ),
         # Add other accounting commands here
     }

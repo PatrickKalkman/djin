@@ -126,6 +126,105 @@ def playwright_context(headless=False):
                 logger.warning(f"Error stopping Playwright: {e}")
 
 
+def login_to_moneymonk(headless=False) -> bool:
+    """
+    Opens browser and logs into MoneyMonk using Playwright.
+    
+    Args:
+        headless: Run the browser in headless mode (default False).
+        
+    Returns:
+        True if login was successful.
+        
+    Raises:
+        ConfigurationError: If credentials are not configured.
+        MoneyMonkError: If login fails due to Playwright or website issues.
+    """
+    logger.info(f"Attempting to login to MoneyMonk via Playwright (headless={headless})...")
+    import os
+    
+    try:
+        # --- Get Configuration ---
+        # Try to get credentials from environment variables first
+        email = os.environ.get("EMAIL")
+        password = os.environ.get("PASSWORD")
+        totp_secret = os.environ.get("TOTP_SECRET")
+        login_url = os.environ.get("LOGIN_URL")
+        
+        # If any login creds are missing, fall back to keyring
+        if not all([email, password, totp_secret, login_url]):
+            logger.info("Some login credentials missing from environment, falling back to config/keyring")
+            creds = _get_moneymonk_credentials()
+            email = email or creds["username"]
+            password = password or creds["password"]
+            totp_secret = totp_secret or creds["totp_secret"]
+            login_url = login_url or creds["url"]
+            
+        # --- Start Playwright ---
+        with playwright_context(headless=headless) as page:
+            # --- 1. Login ---
+            logger.info(f"Logging into {login_url}...")
+            page.goto(login_url)
+            page.wait_for_timeout(2000)
+            
+            logger.debug("Entering credentials...")
+            page.fill("#email", email)
+            page.fill("#password", password)
+            
+            logger.debug("Clicking login button...")
+            page.click("button[data-testid='button']")
+            page.wait_for_timeout(2000)
+            
+            # Handle TOTP if needed
+            totp_selector = "#tfaCode"  # Use #tfaCode instead of #code
+            if page.is_visible(totp_selector):
+                logger.info("TOTP code entry required.")
+                totp_code = pyotp.TOTP(totp_secret).now()
+                logger.info(f"Generated TOTP code: {totp_code}")
+                page.fill(totp_selector, totp_code)
+                logger.debug("Clicking submit button after TOTP...")
+                page.click("button[data-testid='button']")
+                page.wait_for_timeout(2000)
+            else:
+                logger.info("TOTP code entry not required.")
+                
+            # Check if login was successful
+            if page.is_visible("#email") or page.is_visible("#password") or page.is_visible(totp_selector):
+                error_msg = "Login failed. Still on login or TOTP screen."
+                logger.error(error_msg)
+                screenshot_path = Path("~/.Djin/logs/login_failure.png").expanduser()
+                screenshot_path.parent.mkdir(parents=True, exist_ok=True)
+                page.screenshot(path=str(screenshot_path))
+                logger.error(f"Screenshot saved to: {screenshot_path}")
+                raise MoneyMonkError(error_msg)
+                
+            logger.info("Login successful.")
+            
+            # Keep the browser open for the user to interact with
+            logger.info("Browser is now open and logged in. Press Ctrl+C in the terminal to close it.")
+            try:
+                # Wait indefinitely until user interrupts with Ctrl+C
+                while True:
+                    page.wait_for_timeout(1000)  # Check every second
+            except KeyboardInterrupt:
+                logger.info("User interrupted. Closing browser.")
+                
+            return True
+            
+    except (ConfigurationError, MoneyMonkError) as e:
+        logger.error(f"MoneyMonk login failed: {e}")
+        raise  # Re-raise specific errors
+    except PlaywrightTimeoutError as e:
+        logger.error(f"Playwright operation timed out during login: {e}")
+        raise MoneyMonkError(f"Operation timed out during login: {e}")  # Wrap as MoneyMonkError
+    except PlaywrightError as e:
+        logger.error(f"A Playwright error occurred during login: {e}")
+        raise MoneyMonkError(f"A browser automation error occurred during login: {e}")  # Wrap as MoneyMonkError
+    except Exception as e:
+        logger.error(f"An unexpected error occurred during login: {e}", exc_info=True)
+        raise MoneyMonkError(f"An unexpected error during login: {str(e)}")  # Wrap as MoneyMonkError
+
+
 def register_hours_on_website(date: str, description: str, hours: float, headless=True) -> bool:
     """
     Logs into MoneyMonk and registers hours using Playwright.

@@ -10,7 +10,7 @@ from loguru import logger # Import Loguru logger
 from playwright.sync_api import Error as PlaywrightError, TimeoutError as PlaywrightTimeoutError
 
 # Import the actual Playwright client function
-from djin.features.accounting.playwright_client import register_hours_on_website
+from djin.features.accounting.playwright_client import login_to_moneymonk, register_hours_on_website
 from djin.common.errors import MoneyMonkError # Import MoneyMonkError for specific handling
 
 # Loguru logger is imported directly
