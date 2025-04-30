@@ -17,7 +17,7 @@ from djin.common.errors import (  # Added MoneyMonkError, ConfigurationError
     MoneyMonkError,
     handle_error,
 )
-from djin.features.accounting.playwright_client import register_hours_on_website
+from djin.features.accounting.playwright_client import login_to_moneymonk, register_hours_on_website
 
 console = Console()
 
