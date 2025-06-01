@@ -4,14 +4,17 @@ Djin - A magical terminal assistant for developers.
 
 import argparse
 import sys
-import pathlib # Added for log path
 
-from loguru import logger # Import Loguru logger
+from loguru import logger  # Import Loguru logger
 from rich.console import Console
 
 from djin.cli.app import main_loop
 from djin.common.config import is_configured, setup_config
-from djin.common.errors import LOG_DIR, LOG_FILE, handle_error # Import log path constants
+from djin.common.errors import (
+    LOG_DIR,
+    LOG_FILE,  # Import log path constants
+    handle_error,
+)
 
 # Create console for rich output
 console = Console()
@@ -39,6 +42,7 @@ def parse_arguments():
 
     return parser.parse_args()
 
+
 def configure_logging():
     """Configure Loguru sinks."""
     # Ensure log directory exists
@@ -59,7 +63,7 @@ def configure_logging():
         retention="1 week",  # Keep logs for 1 week
         compression="zip",  # Compress rotated files
         format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
-        colorize=True, # Added colorize=True for file logging
+        colorize=True,  # Added colorize=True for file logging
         # Use enqueue=True for async logging if needed, especially in threaded/multi-process apps
         # enqueue=True,
     )
