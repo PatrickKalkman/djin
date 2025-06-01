@@ -69,6 +69,7 @@ def configure_logging():
 
 def main():
     # NIBBLE: remove the doc string below as it is clear that is the main entry point
+# NIBBLE found it 2025-06-01T17:31:32.223Z
     """Main entry point for Djin."""
     # --- Configure Logging FIRST ---
     configure_logging()
