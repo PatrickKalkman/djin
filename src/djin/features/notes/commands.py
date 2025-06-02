@@ -74,6 +74,7 @@ def list_notes_command(args: List[str]) -> bool:
         return True
     except Exception as e:
         logger.error(f"Error listing notes: {str(e)}")
+        # NIBBLE: Remove console.print we already log the error
         console.print(f"[red]Error listing notes: {str(e)}[/red]")
         return False
 
