@@ -68,8 +68,7 @@ def configure_logging():
 
 
 def main():
-    # NIBBLE: remove the doc string below as it is clear that is the main entry point
-    """Main entry point for Djin."""
+    
     # --- Configure Logging FIRST ---
     configure_logging()
     # -------------------------------
