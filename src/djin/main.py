@@ -10,8 +10,11 @@ from rich.console import Console
 
 from djin.cli.app import main_loop
 from djin.common.config import is_configured, setup_config
-from djin.common.errors import LOG_FILE  # Import log path constants
-from djin.common.errors import LOG_DIR, handle_error
+from djin.common.errors import (
+    LOG_DIR,
+    LOG_FILE,  # Import log path constants
+    handle_error,
+)
 
 # Create console for rich output
 console = Console()
@@ -68,7 +71,6 @@ def configure_logging():
 
 
 def main():
-    
     # --- Configure Logging FIRST ---
     configure_logging()
     # -------------------------------

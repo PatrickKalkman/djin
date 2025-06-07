@@ -145,60 +145,59 @@ class OrchestratorAgent:
             # Catch unexpected errors
             logger.error(f"Unexpected error generating work summary for {display_date}: {e}", exc_info=True)
             raise DjinError(f"Failed to generate work summary due to an unexpected error: {str(e)}")
-            
+
     def register_time_with_summary(self, date_str: Optional[str] = None, hours: float = 8.0) -> Dict[str, Any]:
         """
         Generates a work summary and registers the hours on MoneyMonk.
-        
+
         Args:
             date_str: Optional date string in YYYY-MM-DD format (defaults to today).
             hours: Number of hours to register (defaults to 8.0).
-            
+
         Returns:
             Dict with keys:
                 - summary: The generated work summary
                 - registration_result: Result from the accounting API
                 - success: Overall success status
-                
+
         Raises:
             DjinError: If the operation fails unexpectedly.
         """
         try:
             display_date = date_str or "today"
             logger.info(f"Registering time with summary for date: {display_date}, hours: {hours}")
-            
+
             # 1. Generate work summary
             summary = self.generate_work_summary(date_str)
-            
+
             # Check if summary generation failed or found no tasks
             if "No tasks found" in summary:
                 return {
                     "summary": summary,
                     "registration_result": None,
                     "success": False,
-                    "error": "Cannot register time: No tasks were found for this date."
+                    "error": "Cannot register time: No tasks were found for this date.",
                 }
-            
+
             # 2. Register hours using the accounting API
             from djin.features.accounting.api import get_accounting_api
+
             accounting_api = get_accounting_api()
-            
+
             # Use the summary as the description for the time registration
             registration_result = accounting_api.register_hours(
-                date=date_str or datetime.now().strftime("%Y-%m-%d"),
-                description=summary,
-                hours=str(hours)
+                date=date_str or datetime.now().strftime("%Y-%m-%d"), description=summary, hours=str(hours)
             )
-            
+
             # 3. Return combined result
             success = registration_result.get("registration_successful", False)
             return {
                 "summary": summary,
                 "registration_result": registration_result,
                 "success": success,
-                "error": None if success else registration_result.get("errors", ["Registration failed"])[0]
+                "error": None if success else registration_result.get("errors", ["Registration failed"])[0],
             }
-            
+
         except DjinError as e:
             logger.error(f"DjinError in register_time_with_summary: {e}", exc_info=True)
             raise

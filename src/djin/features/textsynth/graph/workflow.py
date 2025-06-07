@@ -17,6 +17,7 @@ def create_title_summarization_graph():
     Returns:
         StateGraph: The workflow graph
     """
+    # NIBBLE: remove all comments below in this function
     # Create a new graph
     graph = StateGraph(SummarizeTitlesState)
 

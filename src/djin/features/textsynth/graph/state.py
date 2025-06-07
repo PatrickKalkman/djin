@@ -6,10 +6,10 @@ This module provides state models for text synthesis workflows.
 
 from typing import List
 
-from pydantic import BaseModel
-
-
-from pydantic import Field # Added Field
+from pydantic import (
+    BaseModel,
+    Field,  # Added Field
+)
 
 
 class SummarizeTitlesState(BaseModel):

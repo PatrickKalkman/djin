@@ -44,5 +44,7 @@ class AccountingAPI:
         logger.info(f"AccountingAPI received register_hours request: date={date}, hours={hours}")
         return self._agent.process_register_hours_request(date, description, hours)
 
-    # Add other accounting-related API methods here if needed
-    # e.g., def get_unregistered_time(...)
+
+# NIBBLE: remove the comments below
+# Add other accounting-related API methods here if needed
+# e.g., def get_unregistered_time(...)
