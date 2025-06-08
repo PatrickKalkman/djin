@@ -45,6 +45,3 @@ class AccountingAPI:
         return self._agent.process_register_hours_request(date, description, hours)
 
 
-# NIBBLE: remove the comments below
-# Add other accounting-related API methods here if needed
-# e.g., def get_unregistered_time(...)
