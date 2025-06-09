@@ -7,7 +7,7 @@ This module provides state models for text synthesis workflows.
 from typing import List
 
 from pydantic import (
-    BaseModel,
+    BaseModel,  # NIBBLE: remove the comment below after the Field,
     Field,  # Added Field
 )
 
