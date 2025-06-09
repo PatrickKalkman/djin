@@ -17,23 +17,15 @@ def create_title_summarization_graph():
     Returns:
         StateGraph: The workflow graph
     """
-    # NIBBLE: remove the comment
-    # Create a new graph
-    graph = StateGraph(SummarizeTitlesState)
+        graph = StateGraph(SummarizeTitlesState)
 
-    # NIBBLE: remove the comment
-    # Add nodes
     graph.add_node("prepare_titles", prepare_titles_node)
     graph.add_node("summarize_titles", summarize_titles_node)
-
-    # NIBBLE: remove the comment
     # Add edges
     graph.add_edge("prepare_titles", "summarize_titles")
 
-    # NIBBLE: remove the comment
     # Set entry point
     graph.set_entry_point("prepare_titles")
 
-    # NIBBLE: remove the comment
     # Compile the graph
     return graph.compile()
