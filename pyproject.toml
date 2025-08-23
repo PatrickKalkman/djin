@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "dotenv>=0.9.9",
-    "jira>=3.8.0",
+    "jira>=3.10.5",
     "langchain-groq>=0.3.1",
     "langgraph>=0.3.21",
     "prompt-toolkit>=3.0.50",
@@ -30,24 +30,5 @@ djin = "djin.main:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/djin"]
 
-[tool.ruff]
-# Enable the pycodestyle (`E`) and Pyflakes (`F`) rules by default
-lint.select = ["E", "F", "I"]
-# Allow unused variables when underscore-prefixed
-lint.dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-lint.ignore = ["E272"]
-# Python version compatibility
-target-version = "py312"
-# Line length matches black's default
-line-length = 120
-
-[tool.ruff.format]
-preview = true
-
-[dependency-groups]
-dev = [
-    "hatch>=1.14.0",
-    "pytest>=8.3.5",
-    "ruff>=0.11.2",
-]
+ 
 
