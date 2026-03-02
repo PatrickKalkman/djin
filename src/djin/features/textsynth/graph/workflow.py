@@ -17,7 +17,7 @@ def create_title_summarization_graph():
     Returns:
         StateGraph: The workflow graph
     """
-        graph = StateGraph(SummarizeTitlesState)
+    graph = StateGraph(SummarizeTitlesState)
 
     graph.add_node("prepare_titles", prepare_titles_node)
     graph.add_node("summarize_titles", summarize_titles_node)

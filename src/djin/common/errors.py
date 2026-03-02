@@ -1,5 +1,6 @@
 """
-Custom exceptions and error handling for Djin.
+ABOUTME: Custom exceptions and error handling for Djin.
+ABOUTME: Defines the DjinError hierarchy and utilities for logging/displaying errors.
 """
 
 import pathlib
@@ -52,6 +53,12 @@ class TimeTrackingError(DjinError):
 
 class MoneyMonkError(DjinError):
     """Error related to MoneyMonk operations."""
+
+    pass
+
+
+class AzureDevOpsError(DjinError):
+    """Error related to Azure DevOps operations."""
 
     pass
 

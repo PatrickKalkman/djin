@@ -1,14 +1,12 @@
 """
-LLM client for report generation and text synthesis.
-
-This module provides a client for interacting with LLMs for report-related operations
-and text synthesis.
+ABOUTME: LLM client for text synthesis and summarization.
+ABOUTME: Uses Groq-hosted models via LangChain to summarize work items.
 """
 
 import os
 from typing import List
 
-from loguru import logger # Import Loguru logger
+from loguru import logger
 
 from dotenv import load_dotenv
 from langchain_core.prompts import PromptTemplate
@@ -17,16 +15,13 @@ from langchain_groq import ChatGroq
 from djin.common.errors import DjinError
 from djin.features.textsynth.llm.prompts import SUMMARIZE_TITLES_PROMPT
 
-# Load environment variables from .env file
 load_dotenv()
-
-# Loguru logger is imported directly, no need for getLogger
 
 
 class TextSynthLLMClient:
     """Client for interacting with LLMs for text synthesis operations."""
 
-    def __init__(self, model: str = "llama-3.3-70b-versatile"):
+    def __init__(self, model: str = "openai/gpt-oss-120b"):
         """
         Initialize the text synthesis LLM client.
 
@@ -35,7 +30,6 @@ class TextSynthLLMClient:
         """
         self.model = model
 
-        # Initialize Groq client
         api_key = os.environ.get("GROQ_API_KEY")
         if not api_key:
             logger.warning("GROQ_API_KEY not found in environment variables")
@@ -44,11 +38,11 @@ class TextSynthLLMClient:
 
     def summarize_titles_with_keys(self, keys: List[str], titles: List[str]) -> str:
         """
-        Summarize multiple Jira issues using their keys and titles.
+        Summarize multiple work items using their keys and titles.
 
         Args:
-            keys: List of Jira issue keys.
-            titles: List of corresponding Jira issue titles.
+            keys: List of work item keys.
+            titles: List of corresponding work item titles.
 
         Returns:
             str: Summarized text including ticket IDs.
@@ -60,23 +54,19 @@ class TextSynthLLMClient:
             raise DjinError("Number of keys and titles must match for summarization.")
 
         try:
-            logger.info(f"Summarizing {len(titles)} Jira issues (keys and titles)")
+            logger.info(f"Summarizing {len(titles)} work items (keys and titles)")
 
-            # Format keys and titles for the prompt
             issues_str = "\n".join([f"- {key}: {title}" for key, title in zip(keys, titles)])
 
-            # Prepare prompt
             prompt_template = PromptTemplate.from_template(SUMMARIZE_TITLES_PROMPT)
-            prompt = prompt_template.format(issues=issues_str) # Pass combined string
+            prompt = prompt_template.format(issues=issues_str)
 
-            # Call Groq LLM
             response = self.llm.invoke(prompt)
 
-            # Extract and return the summary
             summary = response.content.strip()
             logger.info(f"Generated summary: {summary}")
 
             return summary
         except Exception as e:
             logger.error(f"Error in summarize_titles_with_keys: {str(e)}")
-            raise DjinError(f"Failed to summarize issues: {str(e)}")
+            raise DjinError(f"Failed to summarize work items: {str(e)}")

@@ -1,7 +1,6 @@
 """
-Orchestrator agent for Djin.
-
-This module provides an agent for coordinating between different agents.
+ABOUTME: Orchestrator agent for Djin.
+ABOUTME: Coordinates task fetching, summarization, and hour registration across customers.
 """
 
 import logging
@@ -9,10 +8,23 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 from djin.common.errors import DjinError
-from djin.features.tasks.api import get_tasks_api  # Import getter directly
+from djin.features.tasks.api import get_tasks_api
 from djin.features.textsynth.api import TextSynthAPI
 
 logger = logging.getLogger("djin.orchestrator")
+
+CUSTOMERS = {
+    "AION": {
+        "task_source": "jira",
+        "moneymonk_project": "AION Titan Streaming PI",
+    },
+    "LG": {
+        "task_source": "ado",
+        "moneymonk_project": "LLM Project",
+        "ado_org": "hoogendoorn-growthmanagement",
+        "ado_project": "DataAnalytics",
+    },
+}
 
 
 class OrchestratorAgent:
@@ -75,12 +87,49 @@ class OrchestratorAgent:
             logger.error(f"Unexpected error getting task overview: {e}", exc_info=True)
             raise DjinError(f"Failed to get task overview due to an unexpected error: {str(e)}")
 
-    def generate_work_summary(self, date_str: Optional[str] = None) -> str:
+    def _get_tasks_for_customer(self, customer: str, date_str: Optional[str] = None) -> list:
         """
-        Generates a concise summary of tasks worked on for a specific date.
+        Fetch tasks/work items for a customer from the appropriate source.
+
+        Returns:
+            List of normalized task dicts with 'key' and 'summary' fields.
+
+        Raises:
+            DjinError: If customer is unknown or fetching fails.
+        """
+        config = CUSTOMERS.get(customer)
+        if not config:
+            raise DjinError(f"Unknown customer '{customer}'. Valid customers: {', '.join(CUSTOMERS.keys())}")
+
+        if config["task_source"] == "jira":
+            worked_on_data = self._task_api.get_worked_on_tasks(date_str)
+            tasks = worked_on_data.get("tasks", [])
+            errors = worked_on_data.get("errors", [])
+
+            if not tasks and errors:
+                if any("No tasks found that you worked on" in e for e in errors):
+                    return []
+                raise DjinError(f"Failed to fetch Jira tasks: {'; '.join(errors)}")
+            return tasks
+
+        elif config["task_source"] == "ado":
+            from djin.features.tasks.ado_client import get_worked_on_items
+
+            return get_worked_on_items(
+                org=config["ado_org"],
+                project=config["ado_project"],
+                date_str=date_str or datetime.now().strftime("%Y-%m-%d"),
+            )
+
+        raise DjinError(f"Unknown task source '{config['task_source']}' for customer '{customer}'")
+
+    def generate_work_summary(self, date_str: Optional[str] = None, customer: str = "AION") -> str:
+        """
+        Generates a concise summary of tasks worked on for a specific date and customer.
 
         Args:
             date_str: Optional date string in YYYY-MM-DD format (defaults to today).
+            customer: Customer code (e.g. "AION", "LG").
 
         Returns:
             A summary string of the work done, or an error/info message.
@@ -90,69 +139,47 @@ class OrchestratorAgent:
         """
         try:
             display_date = date_str or "today"
-            logger.info(f"Generating work summary for date: {display_date}")
+            logger.info(f"Generating work summary for {customer} on {display_date}")
 
-            # 1. Get tasks worked on using the refactored TaskAPI
-            # Returns Dict: {'tasks': [...], 'errors': [...]}
-            worked_on_data = self._task_api.get_worked_on_tasks(date_str)
-            tasks = worked_on_data.get("tasks", [])
-            errors = worked_on_data.get("errors", [])
+            tasks = self._get_tasks_for_customer(customer, date_str)
 
-            # Handle case where no tasks were found (potentially with specific error message)
             if not tasks:
-                if errors and any("No tasks found that you worked on" in e for e in errors):
-                    # Return the specific message from the agent/graph node
-                    no_tasks_message = next(
-                        (e for e in errors if "No tasks found that you worked on" in e),
-                        f"No tasks found that were worked on for {display_date}.",
-                    )
-                    logger.info(f"No worked-on tasks found for {display_date}.")
-                    return no_tasks_message
-                elif errors:
-                    # Other errors occurred during fetching
-                    logger.error(f"Errors fetching worked-on tasks for {display_date}: {errors}")
-                    raise DjinError(f"Failed to fetch tasks worked on for {display_date}: {'; '.join(errors)}")
-                else:
-                    # No tasks and no specific error message (should be rare if node adds message)
-                    logger.info(f"No worked-on tasks found for {display_date} (no specific error message).")
-                    return f"No tasks found that were worked on for {display_date}."
+                logger.info(f"No worked-on tasks found for {customer} on {display_date}.")
+                return f"No tasks found that were worked on for {display_date}."
 
-            # 2. Extract keys and titles/summaries from the retrieved tasks
             tasks_data = [
                 {"key": task.get("key"), "summary": task.get("summary", "Untitled Task")}
                 for task in tasks
                 if isinstance(task, dict) and task.get("key")
             ]
             if not tasks_data:
-                # This case should be unlikely if 'tasks' is not empty, but handle defensively
                 logger.warning(f"Found tasks for {display_date}, but could not extract keys/summaries.")
                 return f"Found tasks for {display_date}, but could not extract keys or summaries."
 
-            logger.info(f"Found {len(tasks_data)} tasks with keys and summaries to summarize for {display_date}.")
+            logger.info(f"Found {len(tasks_data)} tasks to summarize for {customer} on {display_date}.")
 
-            # 3. Summarize using TextSynthAPI, passing both keys and titles
-            summary = self._textsynth_api.summarize_tasks(tasks_data)  # Renamed method for clarity
-            logger.info(f"Generated work summary for {display_date}: {summary}")
+            summary = self._textsynth_api.summarize_tasks(tasks_data)
+            logger.info(f"Generated work summary for {customer} on {display_date}: {summary}")
 
             return summary
 
         except DjinError as e:
-            # Catch DjinErrors raised during task fetching or summarization
-            logger.error(f"DjinError generating work summary for {display_date}: {e}", exc_info=True)
-            # Re-raise to be handled by the command layer
+            logger.error(f"DjinError generating work summary for {customer} on {display_date}: {e}", exc_info=True)
             raise
         except Exception as e:
-            # Catch unexpected errors
-            logger.error(f"Unexpected error generating work summary for {display_date}: {e}", exc_info=True)
+            logger.error(f"Unexpected error generating work summary for {customer} on {display_date}: {e}", exc_info=True)
             raise DjinError(f"Failed to generate work summary due to an unexpected error: {str(e)}")
 
-    def register_time_with_summary(self, date_str: Optional[str] = None, hours: float = 8.0) -> Dict[str, Any]:
+    def register_time_with_summary(
+        self, date_str: Optional[str] = None, hours: float = 8.0, customer: str = "AION"
+    ) -> Dict[str, Any]:
         """
         Generates a work summary and registers the hours on MoneyMonk.
 
         Args:
             date_str: Optional date string in YYYY-MM-DD format (defaults to today).
             hours: Number of hours to register (defaults to 8.0).
+            customer: Customer code (e.g. "AION", "LG").
 
         Returns:
             Dict with keys:
@@ -164,13 +191,15 @@ class OrchestratorAgent:
             DjinError: If the operation fails unexpectedly.
         """
         try:
+            config = CUSTOMERS.get(customer)
+            if not config:
+                raise DjinError(f"Unknown customer '{customer}'. Valid customers: {', '.join(CUSTOMERS.keys())}")
+
             display_date = date_str or "today"
-            logger.info(f"Registering time with summary for date: {display_date}, hours: {hours}")
+            logger.info(f"Registering time for {customer} on {display_date}, hours: {hours}")
 
-            # 1. Generate work summary
-            summary = self.generate_work_summary(date_str)
+            summary = self.generate_work_summary(date_str, customer=customer)
 
-            # Check if summary generation failed or found no tasks
             if "No tasks found" in summary:
                 return {
                     "summary": summary,
@@ -179,17 +208,17 @@ class OrchestratorAgent:
                     "error": "Cannot register time: No tasks were found for this date.",
                 }
 
-            # 2. Register hours using the accounting API
             from djin.features.accounting.api import get_accounting_api
 
             accounting_api = get_accounting_api()
 
-            # Use the summary as the description for the time registration
             registration_result = accounting_api.register_hours(
-                date=date_str or datetime.now().strftime("%Y-%m-%d"), description=summary, hours=str(hours)
+                date=date_str or datetime.now().strftime("%Y-%m-%d"),
+                description=summary,
+                hours=str(hours),
+                project_name=config["moneymonk_project"],
             )
 
-            # 3. Return combined result
             success = registration_result.get("registration_successful", False)
             return {
                 "summary": summary,

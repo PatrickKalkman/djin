@@ -1,7 +1,6 @@
 """
-Accounting agent for Djin.
-
-Handles interactions related to accounting tasks, like registering hours.
+ABOUTME: Accounting agent for Djin.
+ABOUTME: Coordinates the hour registration workflow via LangGraph.
 """
 
 from typing import Any, Dict
@@ -39,7 +38,9 @@ class AccountingAgent:
                 "registration_successful": False,
             }
 
-    def process_register_hours_request(self, date: str, description: str, hours: str) -> Dict[str, Any]:
+    def process_register_hours_request(
+        self, date: str, description: str, hours: str, project_name: str = "AION Titan Streaming PI"
+    ) -> Dict[str, Any]:
         """
         Process a request to register hours.
 
@@ -47,16 +48,18 @@ class AccountingAgent:
             date: Date string (YYYY-MM-DD).
             description: Description of the work.
             hours: Hours worked (as a string, will be validated in workflow).
+            project_name: The MoneyMonk project to register hours against.
 
         Returns:
             Dict containing formatted output, errors, and success status.
         """
-        logger.info(f"Processing register hours request for date: {date}, hours: {hours}")
+        logger.info(f"Processing register hours request for date: {date}, hours: {hours}, project: {project_name}")
         initial_state = {
             "request_type": "register_hours",
             "date": date,
             "description": description,
-            "hours": hours,  # Pass as string for validation node
+            "hours": hours,
+            "project_name": project_name,
             "validation_errors": [],
             "registration_successful": False,
             "registration_message": "",

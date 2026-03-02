@@ -1,8 +1,6 @@
 """
-Client for interacting with external websites using Playwright.
-
-This module contains the logic to automate browser interactions
-for tasks like registering hours on platforms like MoneyMonk using Playwright.
+ABOUTME: Playwright-based client for automating MoneyMonk time registration.
+ABOUTME: Handles login (with TOTP) and hour entry form submission via browser automation.
 """
 
 import contextlib  # Use contextlib for managing Playwright instance
@@ -225,7 +223,9 @@ def login_to_moneymonk(headless=False) -> bool:
         raise MoneyMonkError(f"An unexpected error during login: {str(e)}")  # Wrap as MoneyMonkError
 
 
-def register_hours_on_website(date: str, description: str, hours: float, headless=True) -> bool:
+def register_hours_on_website(
+    date: str, description: str, hours: float, project_name: str = "AION Titan Streaming PI", headless=True
+) -> bool:
     """
     Logs into MoneyMonk and registers hours using Playwright.
 
@@ -233,6 +233,7 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
         date: The date for the hour registration (YYYY-MM-DD).
         description: The description of the work performed.
         hours: The number of hours to register.
+        project_name: The MoneyMonk project to register hours against.
         headless: Run the browser in headless mode (default True).
 
     Returns:
@@ -324,14 +325,13 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             # Modal selectors
             time_input = "input#time"  # Selector for the time input field
             desc_selector = "input#description"  # Selector for description (updated based on HTML)
-            project_dropdown_trigger = "div.react-select__control"  # More specific selector for dropdown trigger
-            project_option_selector_base = 'div[class*="react-select__option"]'  # Base selector for options
-            project_name_to_select = "AION Titan Streaming PI"  # The specific project name (for verification)
+            project_dropdown_trigger = "div.react-select__control"
+            project_option_selector_base = 'div[class*="react-select__option"]'
             specific_project_option_selector = (
-                f"{project_option_selector_base}:has-text('{project_name_to_select}')"  # Fallback selector
+                f"{project_option_selector_base}:has-text('{project_name}')"
             )
             selected_project_value_selector = (
-                'div[class*="react-select__single-value"]'  # Selector for chosen project display
+                'div[class*="react-select__single-value"]'
             )
             submit_button_selector = "button[data-testid='button']:has-text('Toevoegen')"  # Submit button
 
@@ -373,62 +373,40 @@ def register_hours_on_website(date: str, description: str, hours: float, headles
             page.fill(time_input, str(hours))
             page.wait_for_timeout(300)  # Short wait after filling hours
 
-            # 2. Select project by selecting the second option in the dropdown
-            logger.debug("Selecting project by choosing the second option in dropdown")
-            logger.debug(f"Clicking project dropdown trigger: {project_dropdown_trigger}")
+            # 2. Select project by name from dropdown
+            logger.debug(f"Selecting project '{project_name}' from dropdown")
             page.click(project_dropdown_trigger)
 
-            # Wait for dropdown options to appear
             logger.debug("Waiting for dropdown options to appear")
             page.wait_for_selector(project_option_selector_base, state="visible", timeout=5000)
-
-            # Get all options and select the second one (index 1)
-            logger.debug("Selecting the second option from dropdown")
-            # Wait a moment for all options to be fully loaded
             page.wait_for_timeout(500)
 
-            # Select the second option (index 1, since indexing starts at 0)
-            all_options = page.query_selector_all(project_option_selector_base)
-            if len(all_options) >= 2:
-                logger.debug(f"Found {len(all_options)} options, selecting option #2")
-                all_options[1].click()
-            else:
-                logger.warning(f"Not enough options found in dropdown (found {len(all_options)})")
-                # Fallback: try to click the first option that contains our target text
-                logger.debug(f"Falling back to text search for '{project_name_to_select}'")
-                try:
-                    page.click(specific_project_option_selector)
-                except PlaywrightError as e:
-                    logger.error(f"Failed to select project by text: {e}")
-                    if len(all_options) > 0:
-                        logger.warning("Falling back to first available option")
-                        all_options[0].click()
-                    else:
-                        logger.error("No project options found in dropdown!")
-                        # No need to raise here, let submission fail if project is mandatory
+            logger.debug(f"Clicking option matching '{project_name}'")
+            try:
+                page.click(specific_project_option_selector)
+            except PlaywrightError as e:
+                logger.error(f"Failed to select project '{project_name}': {e}")
+                screenshot_path = Path("~/.Djin/logs/project_selection_failed.png").expanduser()
+                screenshot_path.parent.mkdir(parents=True, exist_ok=True)
+                page.screenshot(path=str(screenshot_path))
+                raise MoneyMonkError(f"Project '{project_name}' not found in dropdown: {e}")
 
             # Verify project selection
-            logger.debug(f"Verifying selection using selector: {selected_project_value_selector}")
-            page.wait_for_timeout(500)  # Short wait for value to update
+            page.wait_for_timeout(500)
             try:
-                # Wait for the selected value element to contain the project name
                 page.wait_for_selector(
-                    f"{selected_project_value_selector}:has-text('{project_name_to_select}')", timeout=3000
+                    f"{selected_project_value_selector}:has-text('{project_name}')", timeout=3000
                 )
                 selected_value = page.text_content(selected_project_value_selector, timeout=1000)
                 logger.info(f"Selected project verified: {selected_value}")
             except PlaywrightTimeoutError:
-                selected_value_now = page.text_content(
-                    selected_project_value_selector, timeout=500
-                )  # Get current value if wait failed
+                selected_value_now = page.text_content(selected_project_value_selector, timeout=500)
                 logger.warning(
-                    f"Verification failed: Could not find '{project_name_to_select}' in selected value element '{selected_project_value_selector}'. Current value: '{selected_value_now}'"
+                    f"Verification failed: expected '{project_name}', got '{selected_value_now}'"
                 )
-                # Take a screenshot for debugging
                 screenshot_path = Path("~/.Djin/logs/project_selection_verification_failed.png").expanduser()
+                screenshot_path.parent.mkdir(parents=True, exist_ok=True)
                 page.screenshot(path=str(screenshot_path))
-                logger.warning(f"Screenshot saved to: {screenshot_path}")
-                # Continue anyway - the selection might still be valid
 
             # 3. Now fill description (after project selection)
             logger.debug(f"Filling description: {description}")

@@ -1,5 +1,6 @@
 """
-Workflow definitions for accounting operations.
+ABOUTME: Workflow definitions for accounting operations.
+ABOUTME: Builds the LangGraph state machine for the hour registration flow.
 """
 from loguru import logger # Import Loguru logger
 from langgraph.graph import END, StateGraph

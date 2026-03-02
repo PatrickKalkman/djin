@@ -1,5 +1,6 @@
 """
-State definitions for accounting workflows.
+ABOUTME: State definitions for accounting workflows.
+ABOUTME: Defines Pydantic models used by the hour registration LangGraph workflow.
 """
 from typing import List, Optional
 
@@ -12,12 +13,10 @@ class RegisterHoursState(BaseModel):
     request_type: str = "register_hours"
     date: str = ""
     description: str = ""
-    hours: Optional[float] = None # Allow for parsing errors initially
-    # Add fields for intermediate steps if needed (e.g., validation results)
+    hours: Optional[float] = None
+    project_name: str = ""
     validation_errors: List[str] = Field(default_factory=list)
-    # Add fields for results from TagUI interaction
     registration_successful: bool = False
     registration_message: str = ""
-    # General errors
     errors: List[str] = Field(default_factory=list)
     formatted_output: str = ""

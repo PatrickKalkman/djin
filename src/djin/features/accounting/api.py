@@ -1,5 +1,6 @@
 """
-Public API for the accounting agent.
+ABOUTME: Public API for the accounting agent.
+ABOUTME: Provides a singleton AccountingAPI that delegates to AccountingAgent for hour registration.
 """
 
 from typing import Any, Dict
@@ -29,7 +30,9 @@ class AccountingAPI:
         self._agent = AccountingAgent()
         logger.debug("AccountingAPI initialized with AccountingAgent.")
 
-    def register_hours(self, date: str, description: str, hours: str) -> Dict[str, Any]:
+    def register_hours(
+        self, date: str, description: str, hours: str, project_name: str = "AION Titan Streaming PI"
+    ) -> Dict[str, Any]:
         """
         Register hours via the accounting agent.
 
@@ -37,11 +40,12 @@ class AccountingAPI:
             date: Date string (YYYY-MM-DD).
             description: Description of the work.
             hours: Hours worked (as string for initial processing).
+            project_name: The MoneyMonk project to register hours against.
 
         Returns:
             Dict containing formatted output, errors, and success status from the agent.
         """
-        logger.info(f"AccountingAPI received register_hours request: date={date}, hours={hours}")
-        return self._agent.process_register_hours_request(date, description, hours)
+        logger.info(f"AccountingAPI received register_hours request: date={date}, hours={hours}, project={project_name}")
+        return self._agent.process_register_hours_request(date, description, hours, project_name=project_name)
 
 

@@ -1,8 +1,7 @@
 """
-Node definitions for accounting workflows.
+ABOUTME: Node definitions for accounting workflows.
+ABOUTME: Contains validate, register, and format nodes for the hour registration graph.
 """
-from datetime import datetime
-
 from datetime import datetime
 
 from loguru import logger # Import Loguru logger
@@ -76,7 +75,10 @@ def register_hours_node(state):
     try:
         # Call the actual Playwright client function
         # Ensure state.hours is float here (validated in previous node)
-        success = register_hours_on_website(state.date, state.description, state.hours, headless=headless)
+        success = register_hours_on_website(
+            state.date, state.description, state.hours,
+            project_name=state.project_name, headless=headless,
+        )
 
         if success:
             logger.info("Playwright: Hour registration reported successful.")

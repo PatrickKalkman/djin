@@ -1,17 +1,15 @@
 """
-Prompts for report generation and text synthesis.
-
-This module provides prompts for interacting with LLMs for report-related operations
-and text synthesis.
+ABOUTME: Prompt templates for text synthesis operations.
+ABOUTME: Contains prompts for summarizing work items and generating reports.
 """
 
-# Prompt for summarizing multiple Jira issue titles including their keys
+# Prompt for summarizing multiple work item titles including their keys
 SUMMARIZE_TITLES_PROMPT = """
-You are an assistant that summarizes multiple Jira issues into a concise, action-oriented summary.
-Given the following Jira issues (Key: Title format), create a brief summary that describes what was worked on,
+You are an assistant that summarizes multiple work items into a concise, action-oriented summary.
+Given the following work items (Key: Title format), create a brief summary that describes what was worked on,
 as if you're reporting on completed or ongoing work.
 
-Jira Issues:
+Work Items:
 {issues}
 
 Your summary should:
@@ -22,16 +20,16 @@ Your summary should:
 5. Be written in a clear, professional, first-person style.
 6. Use past tense as if reporting on work that was done.
 7. Do NOT include commentary about improvements, benefits, or the quality of the work.
-8. IMPORTANT: Include the corresponding Jira issue key (e.g., PROJ-123) in parentheses immediately after mentioning the work related to that issue.
+8. IMPORTANT: Include the corresponding work item key (e.g., PROJ-123 or DA-456) in parentheses immediately after mentioning the work related to that item.
 
 Example Input:
-Jira Issues:
+Work Items:
 - TASK-1: Fix login bug
 - FEAT-2: Implement new dashboard
-- BUG-3: Investigate performance issue
+- DA-42: Update data pipeline
 
 Example Output:
-Worked on fixing a login bug (TASK-1), implementing the new dashboard (FEAT-2), and investigating a performance issue (BUG-3).
+Worked on fixing a login bug (TASK-1), implementing the new dashboard (FEAT-2), and updating the data pipeline (DA-42).
 
 Summary:
 """

@@ -1,18 +1,19 @@
 """
-Command handlers for orchestrator operations.
+ABOUTME: Command handlers for orchestrator operations.
+ABOUTME: Registers CLI commands for task overview, work summary, and time registration.
 """
 
-import logging  # Added import
-from datetime import datetime  # Added import
-from typing import List  # Added import
+import logging
+from datetime import datetime
+from typing import List
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
 from djin.cli.commands import register_command
-from djin.common.errors import DjinError, handle_error  # Added imports
-from djin.features.orchestrator.agent import OrchestratorAgent
+from djin.common.errors import DjinError, handle_error
+from djin.features.orchestrator.agent import CUSTOMERS, OrchestratorAgent
 
 # Create console and agent
 console = Console()
@@ -55,90 +56,129 @@ def overview_command(args: List[str]) -> bool:
         return False
 
 
+def _parse_customer(arg: str) -> str | None:
+    """Return the normalized customer name if arg is a valid customer code, else None."""
+    upper = arg.upper()
+    return upper if upper in CUSTOMERS else None
+
+
 def work_summary_command(args: List[str]) -> bool:
-    """Generate a summary of tasks worked on for a specific date."""
+    """Generate a summary of tasks worked on for a specific date and customer."""
     try:
         date_str = None
+        customer = None
         display_date = "today"
-        if args and len(args) > 0:
-            date_str = args[0]
+        remaining = list(args) if args else []
+
+        # Parse date if first arg looks like YYYY-MM-DD
+        if remaining and len(remaining[0]) == 10 and remaining[0][4] == "-" and remaining[0][7] == "-":
             try:
-                # Validate date format
-                datetime.strptime(date_str, "%Y-%m-%d")
+                datetime.strptime(remaining[0], "%Y-%m-%d")
+                date_str = remaining.pop(0)
                 display_date = date_str
             except ValueError:
                 console.print("[red]Invalid date format. Please use YYYY-MM-DD.[/red]")
-                return False  # Indicate command failure due to bad input
+                return False
 
-        console.print(f"[cyan]Generating work summary for {display_date}...[/cyan]")
-        # Agent method now returns the summary string or an info/error message string
-        summary_or_message = orchestrator_agent.generate_work_summary(date_str)
+        # Parse customer
+        if remaining:
+            customer = _parse_customer(remaining[0])
+            if customer:
+                remaining.pop(0)
+            else:
+                console.print(
+                    f"[red]Unknown customer '{remaining[0]}'. "
+                    f"Valid customers: {', '.join(CUSTOMERS.keys())}[/red]"
+                )
+                return False
 
-        # Display the result in a panel, whether it's a summary or a message
+        if not customer:
+            console.print(
+                f"[red]Customer is required. Valid customers: {', '.join(CUSTOMERS.keys())}[/red]"
+            )
+            return False
+
+        console.print(f"[cyan]Generating work summary for {customer} on {display_date}...[/cyan]")
+        summary_or_message = orchestrator_agent.generate_work_summary(date_str, customer=customer)
+
         if "No tasks found" in summary_or_message:
-            # Display info message without a panel title suggesting a summary was generated
             console.print(f"[yellow]{summary_or_message}[/yellow]")
         else:
-            # Display the generated summary
-            console.print(Panel(summary_or_message, title=f"Work Summary ({display_date})", border_style="blue"))
+            console.print(Panel(summary_or_message, title=f"Work Summary - {customer} ({display_date})", border_style="blue"))
 
-        # Command succeeded if no exceptions were raised
         return True
     except DjinError as e:
-        # Handle errors raised by the agent (e.g., failed task fetching or summarization)
         handle_error(e)
-        return False  # Indicate command failure
+        return False
     except Exception as e:
-        # Handle unexpected errors in the command itself
         logger.error(f"Unexpected error in work-summary command: {e}", exc_info=True)
         console.print("[bold red]An unexpected error occurred while generating the work summary.[/bold red]")
-        return False  # Indicate command failure
+        return False
 
 
 def register_time_command(args: List[str]) -> bool:
-    """Register time with an auto-generated work summary."""
-    try:
-        # Parse arguments
-        date_str = None
-        hours = 8.0  # Default to 8 hours
+    """Register time with an auto-generated work summary.
 
-        # Process arguments
-        if args:
-            # First argument could be date or hours
-            if len(args) >= 1:
-                first_arg = args[0]
-                # Check if first arg is a date (YYYY-MM-DD format)
-                if len(first_arg) == 10 and first_arg[4] == "-" and first_arg[7] == "-":
-                    try:
-                        datetime.strptime(first_arg, "%Y-%m-%d")
-                        date_str = first_arg
-                        # If we have a second arg, it's the hours
-                        if len(args) >= 2:
-                            try:
-                                hours = float(args[1])
-                            except ValueError:
-                                console.print(f"[yellow]Invalid hours value '{args[1]}', using default (8.0)[/yellow]")
-                    except ValueError:
-                        console.print("[red]Invalid date format. Please use YYYY-MM-DD.[/red]")
-                        return False
-                else:
-                    # First arg is hours
-                    try:
-                        hours = float(first_arg)
-                    except ValueError:
-                        console.print(f"[yellow]Invalid hours value '{first_arg}', using default (8.0)[/yellow]")
+    Usage: /register-time [YYYY-MM-DD] <AION|LG> [hours]
+    """
+    try:
+        date_str = None
+        customer = None
+        hours = 8.0
+        remaining = list(args) if args else []
+
+        # Parse date if first arg looks like YYYY-MM-DD
+        if remaining and len(remaining[0]) == 10 and remaining[0][4] == "-" and remaining[0][7] == "-":
+            try:
+                datetime.strptime(remaining[0], "%Y-%m-%d")
+                date_str = remaining.pop(0)
+            except ValueError:
+                console.print("[red]Invalid date format. Please use YYYY-MM-DD.[/red]")
+                return False
+
+        # Parse customer (required)
+        if remaining:
+            customer = _parse_customer(remaining[0])
+            if customer:
+                remaining.pop(0)
+            else:
+                # Check if it's a number (hours without customer)
+                try:
+                    float(remaining[0])
+                    # It's a number, customer is missing
+                except ValueError:
+                    console.print(
+                        f"[red]Unknown customer '{remaining[0]}'. "
+                        f"Valid customers: {', '.join(CUSTOMERS.keys())}[/red]"
+                    )
+                    return False
+
+        if not customer:
+            console.print(
+                f"[red]Customer is required. "
+                f"Usage: /register-time [YYYY-MM-DD] <{'|'.join(CUSTOMERS.keys())}> [hours][/red]"
+            )
+            return False
+
+        # Parse hours
+        if remaining:
+            try:
+                hours = float(remaining[0])
+            except ValueError:
+                console.print(f"[yellow]Invalid hours value '{remaining[0]}', using default (8.0)[/yellow]")
 
         display_date = date_str or "today"
-        console.print(f"[cyan]Registering {hours} hours for {display_date} with auto-generated summary...[/cyan]")
+        console.print(
+            f"[cyan]Registering {hours} hours for {customer} on {display_date} "
+            f"with auto-generated summary...[/cyan]"
+        )
 
-        # Call the orchestrator agent
-        result = orchestrator_agent.register_time_with_summary(date_str, hours)
+        result = orchestrator_agent.register_time_with_summary(date_str, hours, customer=customer)
 
-        # Display the result
         if result["success"]:
             console.print(
                 Panel(
-                    f"[green]Successfully registered {hours} hours for {display_date}[/green]\n\n"
+                    f"[green]Successfully registered {hours} hours for {customer} on {display_date}[/green]\n\n"
                     f"[cyan]Summary:[/cyan] {result['summary']}",
                     title="Time Registration Successful",
                     border_style="green",
@@ -146,14 +186,12 @@ def register_time_command(args: List[str]) -> bool:
             )
             return True
         else:
-            # Handle the case where no tasks were found
             if "No tasks found" in result.get("summary", ""):
                 console.print(
                     f"[yellow]{result.get('error', 'No tasks found for this date.')}\n"
                     f"Please verify the date or register hours manually.[/yellow]"
                 )
             else:
-                # Handle other registration failures
                 error_msg = result.get("error", "Unknown error during registration")
                 console.print(
                     Panel(
@@ -178,17 +216,17 @@ def register_orchestrator_commands():
     """Registers all commands related to the orchestrator feature."""
     # logger is defined at module level
 
+    valid_customers = "|".join(CUSTOMERS.keys())
     commands_to_register = {
         "overview": (overview_command, "Show an overview of your tasks"),
         "work-summary": (
             work_summary_command,
-            "Generate a summary of tasks worked on for a date (YYYY-MM-DD, default: today)",
+            f"Generate a work summary (Usage: /work-summary [YYYY-MM-DD] <{valid_customers}>)",
         ),
         "register-time": (
             register_time_command,
-            "Register time with auto-generated summary (Usage: /register-time [YYYY-MM-DD] [hours])",
+            f"Register time with auto-generated summary (Usage: /register-time [YYYY-MM-DD] <{valid_customers}> [hours])",
         ),
-        # Removed the old "summarize" command as its agent logic was removed/unclear
     }
     for name, (func, help_text) in commands_to_register.items():
         register_command(name, func, help_text)
