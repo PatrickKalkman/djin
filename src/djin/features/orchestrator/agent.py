@@ -107,9 +107,10 @@ class OrchestratorAgent:
             errors = worked_on_data.get("errors", [])
 
             if not tasks and errors:
-                if any("No tasks found that you worked on" in e for e in errors):
-                    return []
-                raise DjinError(f"Failed to fetch Jira tasks: {'; '.join(errors)}")
+                real_errors = [e for e in errors if "No tasks found that you worked on" not in e]
+                if real_errors:
+                    raise DjinError(f"Failed to fetch Jira tasks: {'; '.join(real_errors)}")
+                return []
             return tasks
 
         elif config["task_source"] == "ado":

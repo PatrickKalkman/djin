@@ -217,21 +217,17 @@ def format_output_node(state):
     # The command layer will handle formatting the table.
     # We can add specific messages here if needed.
     elif state.request_type == "worked_on" and not state.processed_tasks:
-        # Add a specific message if no 'worked_on' tasks were found
-        date_display = state.date if state.date else "today"
-        message = (
-            f"No tasks found that you worked on {date_display}.\n"
-            "This could be because:\n"
-            "  • You didn't log any work for this date in Jira\n"
-            "  • You didn't transition any tasks to 'In Progress' on this date\n"
-            "  • You didn't update any assigned tasks on this date\n"
-            "  • You didn't resolve any tasks on this date"
-        )
-        # Optionally, you could fetch fallback tasks here, but it might be cleaner
-        # to let the command layer decide if it wants to show a fallback.
-        # For now, just return the message in the errors list or a dedicated message field.
-        # Let's add it to errors for simplicity.
-        state.errors.append(message)
+        if not state.errors:
+            date_display = state.date if state.date else "today"
+            message = (
+                f"No tasks found that you worked on {date_display}.\n"
+                "This could be because:\n"
+                "  • You didn't log any work for this date in Jira\n"
+                "  • You didn't transition any tasks to 'In Progress' on this date\n"
+                "  • You didn't update any assigned tasks on this date\n"
+                "  • You didn't resolve any tasks on this date"
+            )
+            state.errors.append(message)
 
     # Return the state, ensuring processed_tasks and errors are passed through.
     # formatted_output will be empty for list-based requests now.

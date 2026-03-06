@@ -503,7 +503,7 @@ def get_worked_on_issues(date_str: str = None) -> List[Any]:
         logger.info(f"Found {len(status_changed_issues)} issues with status changes")
         all_issues.extend([issue.key for issue in status_changed_issues if issue.key not in all_issues])
 
-        jql = f"assignee = currentUser() AND status WAS 'In Progress' ON '{target_date}' ORDER BY updated DESC"
+        jql = f"assignee = currentUser() AND (status WAS 'In Progress' ON '{target_date}' OR status WAS 'Work in progress' ON '{target_date}') ORDER BY updated DESC"
         logger.info(f"Executing JQL: {jql}")
         in_progress_issues = jira.search_issues(jql)
         logger.info(f"Found {len(in_progress_issues)} issues that were In Progress on this date")
