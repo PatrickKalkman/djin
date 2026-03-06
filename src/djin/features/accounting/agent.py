@@ -39,7 +39,7 @@ class AccountingAgent:
             }
 
     def process_register_hours_request(
-        self, date: str, description: str, hours: str, project_name: str = "AION Titan Streaming PI"
+        self, date: str, description: str, hours: str, project_name: str = "AION Titan Streaming Platform Development"
     ) -> Dict[str, Any]:
         """
         Process a request to register hours.

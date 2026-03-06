@@ -16,7 +16,7 @@ logger = logging.getLogger("djin.orchestrator")
 CUSTOMERS = {
     "AION": {
         "task_source": "jira",
-        "moneymonk_project": "AION Titan Streaming PI",
+        "moneymonk_project": "AION Titan",
     },
     "LG": {
         "task_source": "ado",

@@ -31,7 +31,7 @@ class AccountingAPI:
         logger.debug("AccountingAPI initialized with AccountingAgent.")
 
     def register_hours(
-        self, date: str, description: str, hours: str, project_name: str = "AION Titan Streaming PI"
+        self, date: str, description: str, hours: str, project_name: str = "AION Titan Streaming Platform Development"
     ) -> Dict[str, Any]:
         """
         Register hours via the accounting agent.

@@ -224,7 +224,7 @@ def login_to_moneymonk(headless=False) -> bool:
 
 
 def register_hours_on_website(
-    date: str, description: str, hours: float, project_name: str = "AION Titan Streaming PI", headless=True
+    date: str, description: str, hours: float, project_name: str = "AION Titan Streaming Platform Development", headless=True
 ) -> bool:
     """
     Logs into MoneyMonk and registers hours using Playwright.
