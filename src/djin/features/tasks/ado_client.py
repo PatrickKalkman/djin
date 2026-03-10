@@ -39,6 +39,24 @@ def _next_day(date_str: str) -> str:
     return (dt + timedelta(days=1)).strftime("%Y-%m-%d")
 
 
+def _execute_wiql(base_url: str, headers: Dict[str, str], wiql_query: str) -> List[int]:
+    """Run a WIQL query and return the matching work item IDs."""
+    wiql_url = f"{base_url}/_apis/wit/wiql?api-version=7.1"
+    logger.debug(f"WIQL: {wiql_query}")
+    response = requests.post(
+        wiql_url,
+        headers=headers,
+        json={"query": wiql_query},
+        timeout=30,
+    )
+    if not response.ok:
+        body = response.text
+        logger.error(f"WIQL query failed ({response.status_code}): {body}")
+        raise AzureDevOpsError(f"WIQL query failed ({response.status_code}): {body}")
+
+    return [ref["id"] for ref in response.json().get("workItems", [])]
+
+
 def get_worked_on_items(org: str, project: str, date_str: str) -> List[Dict[str, Any]]:
     """
     Fetch work items assigned to the authenticated user that were active on the given date.
@@ -58,38 +76,49 @@ def get_worked_on_items(org: str, project: str, date_str: str) -> List[Dict[str,
     headers = _get_ado_headers()
     base_url = f"https://dev.azure.com/{org}/{project}"
 
-    # WIQL query: items assigned to me, changed on target date, not in "New" state
-    wiql_query = (
+    # Query A: items assigned to me, changed on target date, not in "New" state
+    changed_query = (
         "SELECT [System.Id] FROM WorkItems "
         "WHERE [System.AssignedTo] = @Me "
         f"AND [System.ChangedDate] >= '{date_str}' "
         f"AND [System.ChangedDate] < '{_next_day(date_str)}' "
         "AND [System.State] <> 'New' "
+        "AND [System.WorkItemType] <> 'Epic' "
         "ORDER BY [System.ChangedDate] DESC"
     )
 
-    logger.info(f"Executing WIQL query against {org}/{project} for date {date_str}")
-    logger.debug(f"WIQL: {wiql_query}")
+    logger.info(f"Executing WIQL queries against {org}/{project} for date {date_str}")
+    changed_ids = _execute_wiql(base_url, headers, changed_query)
+    logger.info(f"Query A (changed on date): {len(changed_ids)} work items")
 
-    wiql_url = f"{base_url}/_apis/wit/wiql?api-version=7.1"
-    wiql_response = requests.post(
-        wiql_url,
-        headers=headers,
-        json={"query": wiql_query},
-        timeout=30,
-    )
-    if not wiql_response.ok:
-        body = wiql_response.text
-        logger.error(f"WIQL query failed ({wiql_response.status_code}): {body}")
-        raise AzureDevOpsError(f"WIQL query failed ({wiql_response.status_code}): {body}")
+    # Query B: items that were in active states at end of target date (ASOF)
+    asof_ids: List[int] = []
+    try:
+        asof_query = (
+            "SELECT [System.Id] FROM WorkItems "
+            "WHERE [System.AssignedTo] = @Me "
+            "AND [System.State] IN ('In Progress', 'Committed', 'Active', 'Resolved', 'Approved', 'Doing') "
+            "AND [System.WorkItemType] <> 'Epic' "
+            f"ASOF '{date_str}T23:59:59Z'"
+        )
+        asof_ids = _execute_wiql(base_url, headers, asof_query)
+        logger.info(f"Query B (active via ASOF): {len(asof_ids)} work items")
+    except AzureDevOpsError:
+        logger.warning("ASOF query failed, falling back to ChangedDate-only results")
 
-    work_item_refs = wiql_response.json().get("workItems", [])
-    if not work_item_refs:
+    # Combine and deduplicate, preserving order (changed-on-date first)
+    seen: set[int] = set()
+    all_ids: List[int] = []
+    for wid in changed_ids + asof_ids:
+        if wid not in seen:
+            seen.add(wid)
+            all_ids.append(wid)
+
+    if not all_ids:
         logger.info(f"No work items found for {date_str}")
         return []
 
-    ids = [str(ref["id"]) for ref in work_item_refs]
-    logger.info(f"Found {len(ids)} work item IDs, fetching details")
+    logger.info(f"Found {len(all_ids)} unique work item IDs, fetching details")
 
     # Fetch full details via batch endpoint
     batch_url = (
@@ -99,7 +128,7 @@ def get_worked_on_items(org: str, project: str, date_str: str) -> List[Dict[str,
         batch_url,
         headers=headers,
         json={
-            "ids": [int(i) for i in ids],
+            "ids": all_ids,
             "fields": [
                 "System.Id",
                 "System.Title",
