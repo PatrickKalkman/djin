@@ -56,7 +56,9 @@ class TextSynthLLMClient:
         try:
             logger.info(f"Summarizing {len(titles)} work items (keys and titles)")
 
-            issues_str = "\n".join([f"- {key}: {title}" for key, title in zip(keys, titles)])
+            issues_str = "\n".join(
+                [f"- {key}: {title}" if key else f"- {title}" for key, title in zip(keys, titles)]
+            )
 
             prompt_template = PromptTemplate.from_template(SUMMARIZE_TITLES_PROMPT)
             prompt = prompt_template.format(issues=issues_str)

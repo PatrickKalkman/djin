@@ -124,13 +124,20 @@ class OrchestratorAgent:
 
         raise DjinError(f"Unknown task source '{config['task_source']}' for customer '{customer}'")
 
-    def generate_work_summary(self, date_str: Optional[str] = None, customer: str = "AION") -> str:
+    def generate_work_summary(
+        self,
+        date_str: Optional[str] = None,
+        customer: str = "AION",
+        manual_descriptions: Optional[list] = None,
+    ) -> str:
         """
         Generates a concise summary of tasks worked on for a specific date and customer.
 
         Args:
             date_str: Optional date string in YYYY-MM-DD format (defaults to today).
             customer: Customer code (e.g. "AION", "LG").
+            manual_descriptions: Extra task descriptions to merge with the fetched
+                tasks before summarizing. Allows a summary even with no fetched tasks.
 
         Returns:
             A summary string of the work done, or an error/info message.
@@ -144,20 +151,20 @@ class OrchestratorAgent:
 
             tasks = self._get_tasks_for_customer(customer, date_str)
 
-            if not tasks:
-                logger.info(f"No worked-on tasks found for {customer} on {display_date}.")
-                return f"No tasks found that were worked on for {display_date}."
-
             tasks_data = [
                 {"key": task.get("key"), "summary": task.get("summary", "Untitled Task")}
                 for task in tasks
                 if isinstance(task, dict) and task.get("key")
             ]
-            if not tasks_data:
-                logger.warning(f"Found tasks for {display_date}, but could not extract keys/summaries.")
-                return f"Found tasks for {display_date}, but could not extract keys or summaries."
 
-            logger.info(f"Found {len(tasks_data)} tasks to summarize for {customer} on {display_date}.")
+            for description in manual_descriptions or []:
+                tasks_data.append({"key": "", "summary": description})
+
+            if not tasks_data:
+                logger.info(f"No worked-on tasks or manual descriptions for {customer} on {display_date}.")
+                return f"No tasks found that were worked on for {display_date}."
+
+            logger.info(f"Found {len(tasks_data)} items to summarize for {customer} on {display_date}.")
 
             summary = self._textsynth_api.summarize_tasks(tasks_data)
             logger.info(f"Generated work summary for {customer} on {display_date}: {summary}")
@@ -172,7 +179,11 @@ class OrchestratorAgent:
             raise DjinError(f"Failed to generate work summary due to an unexpected error: {str(e)}")
 
     def register_time_with_summary(
-        self, date_str: Optional[str] = None, hours: float = 8.0, customer: str = "AION"
+        self,
+        date_str: Optional[str] = None,
+        hours: float = 8.0,
+        customer: str = "AION",
+        manual_descriptions: Optional[list] = None,
     ) -> Dict[str, Any]:
         """
         Generates a work summary and registers the hours on MoneyMonk.
@@ -181,6 +192,7 @@ class OrchestratorAgent:
             date_str: Optional date string in YYYY-MM-DD format (defaults to today).
             hours: Number of hours to register (defaults to 8.0).
             customer: Customer code (e.g. "AION", "LG").
+            manual_descriptions: Extra task descriptions to merge into the summary.
 
         Returns:
             Dict with keys:
@@ -199,7 +211,9 @@ class OrchestratorAgent:
             display_date = date_str or "today"
             logger.info(f"Registering time for {customer} on {display_date}, hours: {hours}")
 
-            summary = self.generate_work_summary(date_str, customer=customer)
+            summary = self.generate_work_summary(
+                date_str, customer=customer, manual_descriptions=manual_descriptions
+            )
 
             if "No tasks found" in summary:
                 return {

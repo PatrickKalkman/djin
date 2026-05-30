@@ -3,7 +3,9 @@ ABOUTME: Command handlers for orchestrator operations.
 ABOUTME: Registers CLI commands for task overview, work summary, and time registration.
 """
 
+import json
 import logging
+import os
 from datetime import datetime
 from typing import List
 
@@ -12,6 +14,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from djin.cli.commands import register_command
+from djin.common.config import load_config
 from djin.common.errors import DjinError, handle_error
 from djin.features.orchestrator.agent import CUSTOMERS, OrchestratorAgent
 
@@ -60,6 +63,30 @@ def _parse_customer(arg: str) -> str | None:
     """Return the normalized customer name if arg is a valid customer code, else None."""
     upper = arg.upper()
     return upper if upper in CUSTOMERS else None
+
+
+def _parse_manual_descriptions(tokens: List[str]) -> List[str]:
+    """Parse trailing tokens into a list of manual task descriptions.
+
+    Accepts a JSON-style list such as ["task one", "task two"]. The shell splitter
+    strips quotes and breaks on whitespace, so the tokens are rejoined and parsed
+    leniently: a valid JSON list is used as-is, otherwise the text is stripped of
+    surrounding brackets and split on commas.
+    """
+    if not tokens:
+        return []
+    raw = " ".join(tokens).strip()
+    if not raw:
+        return []
+    try:
+        parsed = json.loads(raw)
+        if isinstance(parsed, list):
+            return [str(item).strip() for item in parsed if str(item).strip()]
+    except ValueError:
+        pass
+    inner = raw[1:-1] if raw.startswith("[") and raw.endswith("]") else raw
+    items = [part.strip().strip("\"'").strip() for part in inner.split(",")]
+    return [item for item in items if item]
 
 
 def work_summary_command(args: List[str]) -> bool:
@@ -119,7 +146,10 @@ def work_summary_command(args: List[str]) -> bool:
 def register_time_command(args: List[str]) -> bool:
     """Register time with an auto-generated work summary.
 
-    Usage: /register-time [YYYY-MM-DD] <AION|LG> [hours]
+    Usage: /register-time [YYYY-MM-DD] <AION|LG> [hours] [["manual task", ...]]
+
+    Manual task descriptions are merged with the tasks fetched from Jira/ADO before
+    the summary is generated, so hours can be registered even when no tasks are found.
     """
     try:
         date_str = None
@@ -160,20 +190,29 @@ def register_time_command(args: List[str]) -> bool:
             )
             return False
 
-        # Parse hours
+        # Parse hours (optional positional)
         if remaining:
             try:
                 hours = float(remaining[0])
+                remaining.pop(0)
             except ValueError:
-                console.print(f"[yellow]Invalid hours value '{remaining[0]}', using default (8.0)[/yellow]")
+                pass  # Not a number; treat as the start of manual task descriptions
+
+        # Any remaining tokens are manual task descriptions to merge into the summary
+        manual_descriptions = _parse_manual_descriptions(remaining)
 
         display_date = date_str or "today"
+        manual_note = (
+            f" plus {len(manual_descriptions)} manual task(s)" if manual_descriptions else ""
+        )
         console.print(
             f"[cyan]Registering {hours} hours for {customer} on {display_date} "
-            f"with auto-generated summary...[/cyan]"
+            f"with auto-generated summary{manual_note}...[/cyan]"
         )
 
-        result = orchestrator_agent.register_time_with_summary(date_str, hours, customer=customer)
+        result = orchestrator_agent.register_time_with_summary(
+            date_str, hours, customer=customer, manual_descriptions=manual_descriptions
+        )
 
         if result["success"]:
             console.print(
@@ -212,6 +251,56 @@ def register_time_command(args: List[str]) -> bool:
         return False
 
 
+def whoami_command(args: List[str]) -> bool:
+    """Show which Jira and Azure DevOps accounts djin is authenticated as."""
+    console.print()
+    console.print("[bold cyan]Jira[/bold cyan]")
+    try:
+        config = load_config()
+        jira_config = config.get("jira", {}) or {}
+        console.print(f"  URL:             {jira_config.get('url') or '(not configured)'}")
+        console.print(f"  Configured user: {jira_config.get('username') or '(not configured)'}")
+
+        from djin.features.tasks.jira_client import get_jira_client
+
+        jira = get_jira_client()
+        me = jira.myself() or {}
+        display_name = me.get("displayName") or "?"
+        email = me.get("emailAddress") or "?"
+        account_id = me.get("accountId") or "?"
+        console.print(f"  Resolved user:   {display_name} <{email}> [accountId: {account_id}]")
+    except Exception as e:
+        console.print(f"  [red]Failed to resolve Jira identity: {e}[/red]")
+
+    console.print()
+    console.print("[bold cyan]Azure DevOps[/bold cyan]")
+    if not os.environ.get("ADO_PAT"):
+        console.print("  [yellow]ADO_PAT environment variable not set[/yellow]")
+    else:
+        ado_orgs = sorted({
+            cfg["ado_org"]
+            for cfg in CUSTOMERS.values()
+            if cfg.get("task_source") == "ado" and cfg.get("ado_org")
+        })
+        if not ado_orgs:
+            console.print("  [yellow]No ADO orgs configured in CUSTOMERS[/yellow]")
+        else:
+            from djin.features.tasks.ado_client import get_current_user
+
+            for org in ado_orgs:
+                try:
+                    user = get_current_user(org)
+                    console.print(f"  Org:             {org}")
+                    console.print(
+                        f"  Resolved user:   {user['displayName'] or '?'} <{user['email'] or '?'}>"
+                    )
+                except Exception as e:
+                    console.print(f"  [red]{org}: {e}[/red]")
+
+    console.print()
+    return True
+
+
 def register_orchestrator_commands():
     """Registers all commands related to the orchestrator feature."""
     # logger is defined at module level
@@ -225,7 +314,12 @@ def register_orchestrator_commands():
         ),
         "register-time": (
             register_time_command,
-            f"Register time with auto-generated summary (Usage: /register-time [YYYY-MM-DD] <{valid_customers}> [hours])",
+            f"Register time with auto-generated summary "
+            f"(Usage: /register-time [YYYY-MM-DD] <{valid_customers}> [hours] [[\"manual task\", ...]])",
+        ),
+        "whoami": (
+            whoami_command,
+            "Show which Jira and Azure DevOps accounts djin is authenticated as",
         ),
     }
     for name, (func, help_text) in commands_to_register.items():

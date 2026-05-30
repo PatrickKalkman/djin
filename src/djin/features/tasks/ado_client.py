@@ -57,6 +57,33 @@ def _execute_wiql(base_url: str, headers: Dict[str, str], wiql_query: str) -> Li
     return [ref["id"] for ref in response.json().get("workItems", [])]
 
 
+def get_current_user(org: str) -> Dict[str, str]:
+    """
+    Return identity info for the PAT-authenticated user under the given ADO org.
+
+    Returns:
+        Dict with keys 'displayName', 'email', 'id' (any may be empty if not provided).
+
+    Raises:
+        AzureDevOpsError: If ADO_PAT is missing or the connectionData call fails.
+    """
+    headers = _get_ado_headers()
+    url = f"https://dev.azure.com/{org}/_apis/connectionData?api-version=7.1"
+    response = requests.get(url, headers=headers, timeout=15)
+    if not response.ok:
+        raise AzureDevOpsError(
+            f"connectionData failed ({response.status_code}): {response.text[:200]}"
+        )
+    user = response.json().get("authenticatedUser", {}) or {}
+    properties = user.get("properties", {}) or {}
+    account = properties.get("Account", {}) or {}
+    return {
+        "displayName": user.get("providerDisplayName", "") or "",
+        "email": account.get("$value", "") or "",
+        "id": user.get("id", "") or "",
+    }
+
+
 def get_worked_on_items(org: str, project: str, date_str: str) -> List[Dict[str, Any]]:
     """
     Fetch work items assigned to the authenticated user that were active on the given date.
