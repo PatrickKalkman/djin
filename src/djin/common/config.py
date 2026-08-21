@@ -41,9 +41,9 @@ def ensure_config_dir():
 
 def load_config():
     """Load configuration from file and environment."""
-    load_dotenv()
-
     ensure_config_dir()
+    load_dotenv(CONFIG_DIR / ".env")
+    load_dotenv()
 
     if CONFIG_FILE.exists():
         with open(CONFIG_FILE, "r") as f:

@@ -8,15 +8,12 @@ from typing import List
 
 from loguru import logger
 
-from dotenv import load_dotenv
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 
 from djin.common.config import load_config
 from djin.common.errors import DjinError
 from djin.features.textsynth.llm.prompts import SUMMARIZE_TITLES_PROMPT
-
-load_dotenv()
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
