@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from langchain_core.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 
+from djin.common.config import load_config
 from djin.common.errors import DjinError
 from djin.features.textsynth.llm.prompts import SUMMARIZE_TITLES_PROMPT
 
@@ -21,20 +22,20 @@ load_dotenv()
 class TextSynthLLMClient:
     """Client for interacting with LLMs for text synthesis operations."""
 
-    def __init__(self, model: str = "openai/gpt-oss-120b"):
+    def __init__(self, model: str | None = None):
         """
         Initialize the text synthesis LLM client.
 
         Args:
-            model: The LLM model to use
+            model: The Groq model to use; defaults to the "llm.model" setting in config.json
         """
-        self.model = model
+        self.model = model or load_config()["llm"]["model"]
 
         api_key = os.environ.get("GROQ_API_KEY")
         if not api_key:
             logger.warning("GROQ_API_KEY not found in environment variables")
 
-        self.llm = ChatGroq(groq_api_key=api_key, model_name=model)
+        self.llm = ChatGroq(groq_api_key=api_key, model_name=self.model)
 
     def summarize_titles_with_keys(self, keys: List[str], titles: List[str]) -> str:
         """

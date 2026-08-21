@@ -28,6 +28,9 @@ DEFAULT_CONFIG = {
         "password": "",
         "totp_secret": "",
     },
+    "llm": {
+        "model": "openai/gpt-oss-120b",
+    },
 }
 
 
@@ -45,6 +48,7 @@ def load_config():
     if CONFIG_FILE.exists():
         with open(CONFIG_FILE, "r") as f:
             config = json.load(f)
+        config.setdefault("llm", dict(DEFAULT_CONFIG["llm"]))
     else:
         config = DEFAULT_CONFIG.copy()
         save_config(config)
@@ -55,6 +59,8 @@ def load_config():
         config["jira"]["username"] = os.getenv("Djin_JIRA_USERNAME")
     if os.getenv("Djin_MONEYMONK_USERNAME"):
         config["moneymonk"]["username"] = os.getenv("Djin_MONEYMONK_USERNAME")
+    if os.getenv("Djin_LLM_MODEL"):
+        config["llm"]["model"] = os.getenv("Djin_LLM_MODEL")
 
 
     if config["jira"]["username"]:
