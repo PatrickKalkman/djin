@@ -29,7 +29,7 @@ DEFAULT_CONFIG = {
         "totp_secret": "",
     },
     "llm": {
-        "model": "anthropic/claude-haiku-4.5",
+        "model": "anthropic/claude-sonnet-5",
     },
 }
 
