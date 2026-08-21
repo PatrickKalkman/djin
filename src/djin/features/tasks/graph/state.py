@@ -4,7 +4,7 @@ State definitions for task workflows.
 This module provides state classes for LangGraph workflows.
 """
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -22,7 +22,7 @@ class TaskState(BaseModel):
     summary: str = ""  # Summary for create_ticket request
     description: str = ""  # Description for create_ticket request
     issue_type: str = ""  # Issue type for create_ticket request
-    raw_tasks: List[Dict] = Field(default_factory=list)
+    raw_tasks: List[Any] = Field(default_factory=list)  # jira.Issue objects, or dicts for single-issue requests
     processed_tasks: List[Dict] = Field(default_factory=list)
     formatted_output: str = ""
     errors: List[str] = Field(default_factory=list)
