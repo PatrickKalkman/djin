@@ -1,6 +1,6 @@
 """
 ABOUTME: LLM client for text synthesis and summarization.
-ABOUTME: Uses Groq-hosted models via LangChain to summarize work items.
+ABOUTME: Uses OpenRouter-hosted models via LangChain to summarize work items.
 """
 
 import os
@@ -10,13 +10,15 @@ from loguru import logger
 
 from dotenv import load_dotenv
 from langchain_core.prompts import PromptTemplate
-from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
 
 from djin.common.config import load_config
 from djin.common.errors import DjinError
 from djin.features.textsynth.llm.prompts import SUMMARIZE_TITLES_PROMPT
 
 load_dotenv()
+
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 
 class TextSynthLLMClient:
@@ -27,15 +29,19 @@ class TextSynthLLMClient:
         Initialize the text synthesis LLM client.
 
         Args:
-            model: The Groq model to use; defaults to the "llm.model" setting in config.json
+            model: The OpenRouter model to use; defaults to the "llm.model" setting in config.json
         """
         self.model = model or load_config()["llm"]["model"]
 
-        api_key = os.environ.get("GROQ_API_KEY")
+        api_key = os.environ.get("OPENROUTER_API_KEY")
         if not api_key:
-            logger.warning("GROQ_API_KEY not found in environment variables")
+            logger.warning("OPENROUTER_API_KEY not found in environment variables")
 
-        self.llm = ChatGroq(groq_api_key=api_key, model_name=self.model)
+        self.llm = ChatOpenAI(
+            api_key=api_key,
+            base_url=OPENROUTER_BASE_URL,
+            model=self.model,
+        )
 
     def summarize_titles_with_keys(self, keys: List[str], titles: List[str]) -> str:
         """

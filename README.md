@@ -145,7 +145,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - Built with [LangGraph](https://github.com/langchain-ai/langgraph) for agent workflows
-- Uses [Groq](https://groq.com/) for AI-powered summaries
+- Uses [OpenRouter](https://openrouter.ai/) for AI-powered summaries (model set via `llm.model` in `~/.Djin/config.json`)
 - [Playwright](https://playwright.dev/) for browser automation with MoneyMonk
 - [Prompt-toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit) for the interactive CLI
 - [Rich](https://github.com/Textualize/rich) for beautiful terminal formatting
